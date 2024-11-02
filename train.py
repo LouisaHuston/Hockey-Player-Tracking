@@ -69,7 +69,8 @@ def main():
 
     # Step 6: Overlay bounding boxes on images
     output_folder = 'overlays/'
-    overlay_boxes('coco_annotations.json', images_folder, output_folder)
+    overlay_boxes('data/annotations/train.json', train_images_folder, output_folder)
+    overlay_boxes('data/annotations/test.json', test_images_folder, output_folder)
     print(f"All images with overlays saved in {output_folder}")
 
     # Step 7: Create video from images
