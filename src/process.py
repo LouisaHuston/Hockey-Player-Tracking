@@ -3,7 +3,6 @@
 import os
 import cv2
 import json
-import random
 from tqdm import tqdm
 import numpy as np
 from collections import defaultdict
@@ -13,7 +12,7 @@ def extract_frames(video_path, output_folder):
     """Extract frames from a video and save them as images."""
     cap = cv2.VideoCapture(video_path)
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    frame_number = 1  # Start from 1 to match frame numbers in annotations
+    frame_number = 0
 
     # Create the output directory if it doesn't exist
     if not os.path.exists(output_folder):
@@ -38,8 +37,8 @@ def extract_frames(video_path, output_folder):
 
     print(f"Completed extracting frames from {os.path.basename(video_path)} into {output_folder}")
 
-def find_videos_and_extract_frames(root_folder, output_folder):
-    """Find all .mp4 files in the root_folder and extract their frames into output_folder."""
+def find_videos_and_extract_frames(root_folder):
+    """Find all .mp4 files in the root_folder and extract their frames."""
     video_files = []
 
     # Collect all video file paths
@@ -52,10 +51,39 @@ def find_videos_and_extract_frames(root_folder, output_folder):
     for video_path in video_files:
         # Generate output path based on the video path
         relative_path = os.path.relpath(os.path.dirname(video_path), root_folder)
-        output_video_folder = os.path.join(output_folder, relative_path)
+        video_name = os.path.splitext(os.path.basename(video_path))[0]
+        output_folder = os.path.join('images', relative_path, video_name)
 
         # Extract frames
-        extract_frames(video_path, output_video_folder)
+        extract_frames(video_path, output_folder)
+
+        # Uncomment the next line to process all videos
+        # Remove 'return' if you want to process all videos
+        return
+
+def list_frames(root_dir, ext=".jpg"):
+    """Create a list of all frame paths with the specified extension in the given root directory."""
+    frame_list = []
+    if not os.path.exists(root_dir):
+        raise FileNotFoundError(f"The directory {root_dir} does not exist.")
+
+    # Traverse the directory structure
+    for subdir, _, files in os.walk(root_dir):
+        for file in files:
+            if file.lower().endswith(ext.lower()):
+                file_path = os.path.join(subdir, file)
+                frame_list.append(file_path)
+    return frame_list
+
+def save_frames_to_file(frame_list, output_file, batch_size=1000):
+    """Save the list of frame paths to a file in batches."""
+    try:
+        with open(output_file, 'w') as f:
+            for i in range(0, len(frame_list), batch_size):
+                batch = frame_list[i:i+batch_size]
+                f.writelines(f"{frame}\n" for frame in batch)
+    except IOError as e:
+        print(f"Error writing to file {output_file}: {e}")
 
         # Uncomment for only doing one video
         return
@@ -91,12 +119,15 @@ def process_filename(file_path, frame_number):
     """Convert the file path to the required format."""
     parts = file_path.split(os.sep)
 
-    # Extract relevant parts from the path
-    video_sequence = parts[-2]  # e.g., '001'
-    video_folder = parts[-3]    # e.g., 'CAR_VS_BOS_2019'
+    # Extract the game and match identifier from the path
+    game_info = parts[-2]  # Example: 'CAR_VS_BOS_2019_001'
+    game_folder = game_info.rsplit('_', 1)[0]  # Example: 'CAR_VS_BOS_2019'
+
+    # Extract the last three digits
+    last_three_digits = game_info.rsplit('_', 1)[1]
 
     # Return the desired filename structure
-    return os.path.join(video_folder, video_sequence, f"{frame_number}.jpg")
+    return f"{game_folder}/{last_three_digits}/{frame_number}.jpg"
 
 def create_coco_annotations(annotations, images_folder):
     """Generate COCO-style annotations, including only images that exist."""
@@ -191,43 +222,6 @@ def draw_bounding_boxes(image_path, annotations, output_path):
 
     # Save the image with bounding boxes
     cv2.imwrite(output_path, image)
-
-def split_dataset(coco_data, train_ratio=0.8):
-    """Split the dataset into training and testing sets."""
-    # Get all image IDs
-    image_ids = [image['id'] for image in coco_data['images']]
-
-    # Shuffle image IDs
-    random.shuffle(image_ids)
-
-    # Split image IDs into train and test
-    num_train = int(len(image_ids) * train_ratio)
-    train_image_ids = set(image_ids[:num_train])
-    test_image_ids = set(image_ids[num_train:])
-
-    # Split images
-    train_images = [image for image in coco_data['images'] if image['id'] in train_image_ids]
-    test_images = [image for image in coco_data['images'] if image['id'] in test_image_ids]
-
-    # Split annotations
-    train_annotations = [ann for ann in coco_data['annotations'] if ann['image_id'] in train_image_ids]
-    test_annotations = [ann for ann in coco_data['annotations'] if ann['image_id'] in test_image_ids]
-
-    # Prepare train and test data
-    train_data = {
-        "images": train_images,
-        "annotations": train_annotations,
-        "categories": coco_data['categories']
-    }
-
-    test_data = {
-        "images": test_images,
-        "annotations": test_annotations,
-        "categories": coco_data['categories']
-    }
-
-    return train_data, test_data
-
 
 def overlay_boxes(coco_json_path, images_folder, output_folder):
     """Overlay bounding boxes on images based on COCO annotations and save the results."""

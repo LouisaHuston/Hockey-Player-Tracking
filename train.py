@@ -2,17 +2,17 @@
 
 import os
 import json
-import shutil
 
 from src.download_data import download_dataset
 from src.process import (
     find_videos_and_extract_frames,
+    list_frames,
+    save_frames_to_file,
     extract_annotations,
     create_coco_annotations,
     overlay_boxes,
     create_video_from_images,
     generate_heatmap,
-    split_dataset
 )
 
 def main():
@@ -22,50 +22,32 @@ def main():
     # Change current working directory to dataset_dir
     os.chdir(dataset_dir)
 
-    # Step 2: Extract frames from all videos
-    root_videos_folder = 'clips'
-    images_output_folder = 'data/images/all'
-    find_videos_and_extract_frames(root_videos_folder, images_output_folder)
+    # Step 2: Extract frames from videos
+    root_folder = "clips"
+    find_videos_and_extract_frames(root_folder)
 
-    # Step 3: Extract all annotations
-    root_annotations_folder = 'MOT_Challenge_Sytle_Label'
-    all_annotations = extract_annotations(root_annotations_folder)
+    # Step 3: List frames and save to file
+    root_dir = 'images'
+    frames = list_frames(root_dir)
+    output_file = 'frame_list.txt'
+    save_frames_to_file(frames, output_file)
+    print(f"Successfully saved {len(frames)} frame paths to {output_file}")
 
-    # Step 4: Create COCO annotations for all data
-    images_folder = images_output_folder
-    coco_data = create_coco_annotations(all_annotations, images_folder)
+    # Step 4: Extract annotations
+    test_root_folder = 'MOT_Challenge_Sytle_Label/test/'
+    train_root_folder = 'MOT_Challenge_Sytle_Label/train/'
+    test_annotations = extract_annotations(test_root_folder)
+    train_annotations = extract_annotations(train_root_folder)
+    annotations_array = test_annotations + train_annotations
 
-    # Step 5: Perform train/test split
-    train_data, test_data = split_dataset(coco_data, train_ratio=0.8)
+    # Step 5: Create COCO annotations
+    images_folder = 'images/'
+    coco_data = create_coco_annotations(annotations_array, images_folder)
 
-    # Create directories for train and test images
-    train_images_folder = 'data/images/train'
-    test_images_folder = 'data/images/test'
-    os.makedirs(train_images_folder, exist_ok=True)
-    os.makedirs(test_images_folder, exist_ok=True)
-
-    # Step 6: Move images to train and test folders
-    for image_info in train_data['images']:
-        src_image_path = os.path.join(images_folder, image_info['file_name'])
-        dst_image_path = os.path.join(train_images_folder, image_info['file_name'])
-        os.makedirs(os.path.dirname(dst_image_path), exist_ok=True)
-        shutil.move(src_image_path, dst_image_path)
-
-    for image_info in test_data['images']:
-        src_image_path = os.path.join(images_folder, image_info['file_name'])
-        dst_image_path = os.path.join(test_images_folder, image_info['file_name'])
-        os.makedirs(os.path.dirname(dst_image_path), exist_ok=True)
-        shutil.move(src_image_path, dst_image_path)
-
-    # Step 7: Save the COCO annotations to JSON files
-    os.makedirs('data/annotations', exist_ok=True)
-    with open('data/annotations/train.json', 'w') as f:
-        json.dump(train_data, f)
-    print("COCO JSON for train set generated and saved as 'data/annotations/train.json'.")
-
-    with open('data/annotations/test.json', 'w') as f:
-        json.dump(test_data, f)
-    print("COCO JSON for test set generated and saved as 'data/annotations/test.json'.")
+    # Save the COCO annotations to a JSON file
+    with open('coco_annotations.json', 'w') as f:
+        json.dump(coco_data, f)
+    print("COCO JSON generated and saved as 'coco_annotations.json'.")
 
     # Step 6: Overlay bounding boxes on images
     output_folder = 'overlays/'
@@ -79,7 +61,8 @@ def main():
     create_video_from_images(output_folder, output_video_path, frame_rate)
     print(f"Video saved to {output_video_path}")
 
-    # Step 9: Start the Training Process
+    # Step 8: Generate heatmap
+    generate_heatmap('coco_annotations.json')
 
 if __name__ == "__main__":
     main()
