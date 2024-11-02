@@ -64,5 +64,7 @@ def main():
     # Step 8: Generate heatmap
     generate_heatmap('coco_annotations.json')
 
+    # Step 9: Start the Training Process
+
 if __name__ == "__main__":
     main()
