@@ -64,5 +64,23 @@ def main():
     # Step 8: Generate heatmap
     generate_heatmap('coco_annotations.json')
 
+    # Step 9: Start the Training Process
+    import torch
+    from model import setup_model
+    
+    def train_model(data_dir, num_epochs=10):
+        model, train_loader, device = setup_model(data_dir)
+    
+        for epoch in range(num_epochs):
+            model.train()  # Set model to training mode
+            print(f'Starting epoch {epoch + 1}/{num_epochs}')
+    
+            for images, _ in train_loader:
+                images = images.to(device)
+                outputs = model(images)  # Forward pass
+    
+        # Save the trained model
+        torch.save(model.state_dict(), "co_detr_model.pth")
+
 if __name__ == "__main__":
     main()
