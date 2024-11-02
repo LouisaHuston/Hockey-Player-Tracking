@@ -1,8 +1,15 @@
-import os
+# src/download_data.py
 
-def download_data(repo_url, output_dir):
-    """Clone a Git repository to the specified directory."""
-    if not os.path.exists(output_dir):
-        os.system(f"git clone {repo_url} {output_dir}")
+def download_dataset():
+    import os
+    import subprocess
+
+    dataset_dir = 'hockeyTrackingDataset'
+
+    if not os.path.exists(dataset_dir):
+        subprocess.run(['git', 'clone', 'https://github.com/grant81/hockeyTrackingDataset.git'])
+        print("Dataset downloaded.")
     else:
-        print("Data already exists.")
+        print("Dataset already downloaded.")
+
+    return os.path.abspath(dataset_dir)
