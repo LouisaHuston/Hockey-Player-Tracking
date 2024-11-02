@@ -85,9 +85,6 @@ def save_frames_to_file(frame_list, output_file, batch_size=1000):
     except IOError as e:
         print(f"Error writing to file {output_file}: {e}")
 
-        # Uncomment for only doing one video
-        return
-
 def extract_annotations(root_folder):
     """Find all .txt files in the root_folder and extract annotations."""
     gt_files = []
