@@ -58,7 +58,7 @@ def find_videos_and_extract_frames(root_folder, output_folder):
         extract_frames(video_path, output_video_folder)
 
         # Uncomment for only doing one video
-        # return
+        return
 
 def extract_annotations(root_folder):
     """Find all .txt files in the root_folder and extract annotations."""
