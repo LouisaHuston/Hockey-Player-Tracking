@@ -54,12 +54,12 @@ def main():
     overlay_boxes('coco_annotations.json', images_folder, output_folder)
     print(f"All images with overlays saved in {output_folder}")
 
-    # Step 7: Create video from images
-    images_subfolder = os.path.join(output_folder, 'allstar_2019', '001')  # Adjust the path as needed
-    output_video_path = 'output_video.mp4'
-    frame_rate = 30  # Adjust as needed
-    create_video_from_images(images_subfolder, output_video_path, frame_rate)
-    print(f"Video saved to {output_video_path}")
+    # # Step 7: Create video from images
+    # images_subfolder = os.path.join(output_folder, 'allstar_2019', '001')  # Adjust the path as needed
+    # output_video_path = 'output_video.mp4'
+    # frame_rate = 30  # Adjust as needed
+    # create_video_from_images(images_subfolder, output_video_path, frame_rate)
+    # print(f"Video saved to {output_video_path}")
 
     # Step 8: Generate heatmap
     generate_heatmap('coco_annotations.json')
