@@ -66,7 +66,7 @@ def main():
 
     # Step 9: Start the Training Process
     import torch
-    from model import setup_model
+    from src.model import setup_model
     
     def train_model(data_dir, num_epochs=10):
         model, train_loader, device = setup_model(data_dir)
