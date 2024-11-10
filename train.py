@@ -23,7 +23,7 @@ def main():
     download_dataset(dataset_dir)
     
     # Step 2: Extract frames from videos
-    root_folder = "clips"
+    root_folder = f"{dataset_dir}/clips"
     find_videos_and_extract_frames(root_folder)
     
     # Step 3: List frames and save to file
