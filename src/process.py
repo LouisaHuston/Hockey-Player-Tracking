@@ -59,7 +59,7 @@ def find_videos_and_extract_frames(root_folder):
 
         # Uncomment the next line to process all videos
         # Remove 'return' if you want to process all videos
-        return
+        #return
 
 def list_frames(root_dir, ext=".jpg"):
     """Create a list of all frame paths with the specified extension in the given root directory."""
