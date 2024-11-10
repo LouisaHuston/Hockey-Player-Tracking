@@ -27,21 +27,21 @@ def main():
     find_videos_and_extract_frames(root_folder)
     
     # Step 3: List frames and save to file
-    root_dir = 'images'
+    root_dir = f"{dataset_dir}/images"
     frames = list_frames(root_dir)
     output_file = 'frame_list.txt'
     save_frames_to_file(frames, output_file)
     print(f"Successfully saved {len(frames)} frame paths to {output_file}")
     
     # Step 4: Extract annotations
-    test_root_folder = 'MOT_Challenge_Sytle_Label/test/'
-    train_root_folder = 'MOT_Challenge_Sytle_Label/train/'
+    test_root_folder = f"{dataset_dir}/MOT_Challenge_Sytle_Label/test/"
+    train_root_folder = f"{dataset_dir}/MOT_Challenge_Sytle_Label/train/"
     test_annotations = extract_annotations(test_root_folder)
     train_annotations = extract_annotations(train_root_folder)
     annotations_array = test_annotations + train_annotations
     
     # Step 5: Create COCO annotations
-    images_folder = 'images/'
+    images_folder = f"{dataset_dir}/images/"
     coco_data = create_coco_annotations(annotations_array, images_folder)
     
     # Save the COCO annotations to a JSON file
@@ -50,7 +50,7 @@ def main():
     print("COCO JSON generated and saved as 'coco_annotations.json'.")
     
     # Step 6: Overlay bounding boxes on images
-    output_folder = 'overlays/'
+    output_folder = 'data/overlays/'
     overlay_boxes('coco_annotations.json', images_folder, output_folder)
     print(f"All images with overlays saved in {output_folder}")
     
