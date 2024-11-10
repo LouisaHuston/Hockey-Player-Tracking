@@ -38,7 +38,7 @@ def extract_frames(video_path, output_folder):
     print(f"Completed extracting frames from {os.path.basename(video_path)} into {output_folder}")
 
 def find_videos_and_extract_frames(root_folder):
-    """Find all .mp4 files in the root_folder and extract their frames."""
+    """Find all .mp4 files in the root_folder and extract their frames if they don't already exist."""
     video_files = []
 
     # Collect all video file paths
@@ -54,12 +54,14 @@ def find_videos_and_extract_frames(root_folder):
         video_name = os.path.splitext(os.path.basename(video_path))[0]
         output_folder = os.path.join('images', relative_path, video_name)
 
-        # Extract frames
-        extract_frames(video_path, output_folder)
+        # Check if the output folder exists and contains images
+        if os.path.exists(output_folder) and len(os.listdir(output_folder)) > 0:
+            print(f"Frames already exist for {video_path}. Skipping extraction.")
+            continue  # Skip extraction if frames are already present
 
-        # Uncomment the next line to process all videos
-        # Remove 'return' if you want to process all videos
-        #return
+        # Extract frames if they don't already exist
+        extract_frames(video_path, output_folder)
+        print(f"Frames extracted for {video_path} into {output_folder}")
 
 def list_frames(root_dir, ext=".jpg"):
     """Create a list of all frame paths with the specified extension in the given root directory."""
