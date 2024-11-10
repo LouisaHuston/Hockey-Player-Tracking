@@ -120,7 +120,8 @@ def main():
         # Save the trained model's state_dict
         torch.save(model.state_dict(), "detr_model.pth")
         print("Model saved to 'detr_model.pth'")
-
+    
+    train_model(data_dir='path/to/your/data', num_epochs=10, learning_rate=1e-5)
 
 
 if __name__ == "__main__":
