@@ -4,7 +4,6 @@ import os
 import torch
 from torch.utils.data import DataLoader
 from transformers import DetrForObjectDetection, DetrImageProcessor
-from src.dataset import COCODataset  # Ensure this points to the correct custom dataset
 
 def get_data_loader(images_dir, annotations_path, batch_size=4):
     """
