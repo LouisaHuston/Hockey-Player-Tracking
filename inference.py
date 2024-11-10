@@ -23,6 +23,23 @@ def main():
   extract_frames_from_video(video_path, frames_output_folder)
 
   # 2) Specify video relative location to the rink
+  import cv2
+  import numpy as np
+  
+  def calculate_homography(frame_points, rink_points):
+      """
+      Calculates the homography matrix for perspective transformation.
+  
+      :param frame_points: 2D coordinates from the video frame (e.g., corners of the rink in the frame)
+      :param rink_points: 2D real-world coordinates (e.g., corresponding corners of the rink on the actual surface)
+      :return: homography matrix
+      """
+      frame_points = np.float32(frame_points)
+      rink_points = np.float32(rink_points)
+  
+      # Calculate the homography matrix
+      homography_matrix, status = cv2.findHomography(frame_points, rink_points)
+      return homography_matrix
 
   # 3) Run inference on those frames - save result in COCO format to data/annoations/inference.json
   
