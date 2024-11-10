@@ -20,7 +20,7 @@ def main():
     
     # Step 1: Download the dataset
     dataset_dir = 'hockeyTrackingDataset'
-    dataset_dir = download_dataset(dataset_dir)
+    download_dataset(dataset_dir)
     
     # Change current working directory to dataset_dir
     os.chdir(dataset_dir)
