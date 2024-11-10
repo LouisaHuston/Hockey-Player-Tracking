@@ -1,3 +1,11 @@
+# src/model.py
+
+import os
+import torch
+from torch.utils.data import DataLoader
+from transformers import DetrForObjectDetection, DetrImageProcessor
+from src.dataset import COCODataset  # Ensure this points to the correct custom dataset
+
 def get_data_loader(images_dir, annotations_path, batch_size=4):
     """
     Create a data loader for the dataset with the specified batch size.
@@ -6,38 +14,33 @@ def get_data_loader(images_dir, annotations_path, batch_size=4):
         annotations_path (str): Path to the JSON file containing COCO annotations.
         batch_size (int): Batch size for data loading.
     """
-    # Define a transform to preprocess the images (DETR requires specific preprocessing)
+    # Initialize the image processor for DETR
     processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
-
-    # Assuming your COCODataset class returns a dictionary with 'image' and 'annotations'
+    
+    # Create the custom dataset (make sure COCODataset is defined correctly for DETR)
     dataset = COCODataset(images_dir, annotations_path, processor=processor)
-    return DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    
+    # Create and return the DataLoader
+    return DataLoader(dataset, batch_size=batch_size, shuffle=True, collate_fn=dataset.collate_fn)
 
 def setup_model(data_dir):
     """
-    Setup the model and dataloaders for training and testing.
+    Setup the model, data loaders, and device for training.
     Args:
         data_dir (str): Path to the data directory containing images and annotations.
     """
-    import os
-    import torch
-    from torch.utils.data import DataLoader
-    from transformers import DetrForObjectDetection, DetrImageProcessor
-    from torchvision import transforms
-    from co_detr.dataset import COCODataset  # Replace with your own dataset class if different
-    
-    # Define the directories for images and annotations
+    # Define the paths for the train and test images and annotations
     train_images_dir = os.path.join(data_dir, "images/train")
     test_images_dir = os.path.join(data_dir, "images/test")
     train_annotations_path = os.path.join(data_dir, "annotations/train.json")
     test_annotations_path = os.path.join(data_dir, "annotations/test.json")
 
-    # Create data loaders for training and testing
+    # Setup the data loaders
     train_loader = get_data_loader(train_images_dir, train_annotations_path)
     test_loader = get_data_loader(test_images_dir, test_annotations_path)
 
     # Load the pre-trained DETR model
-    model = DetrForObjectDetection.from_pretrained("facebook/detr-resnet-50", num_labels=91)  # Adjust num_labels based on the number of classes
+    model = DetrForObjectDetection.from_pretrained("facebook/detr-resnet-50", num_labels=91)  # Adjust `num_labels` if needed
 
     # Setup device (CUDA or CPU)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
