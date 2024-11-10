@@ -66,61 +66,57 @@ def main():
     # generate_heatmap('coco_annotations.json')
 
     # Step 9: Start the Training Process
-    import torch.optim as optim
-    from tqdm import tqdm  # For progress bars (optional)
-    
     def train_model(data_dir, num_epochs=10, learning_rate=1e-5):
-        # Set up the model, data loaders, and device
+        # Step 1: Set up the model, data loaders, and device
         model, train_loader, test_loader, device = setup_model(data_dir)
         
-        # Define the optimizer
+        # Step 2: Define the optimizer
         optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
         
-        # Set model to training mode
+        # Step 3: Set model to training mode
         model.train()
-        
+
+        # Step 4: Start the training loop
         for epoch in range(num_epochs):
             print(f"Starting epoch {epoch + 1}/{num_epochs}")
-            
-            # Initialize loss variables (optional)
             epoch_loss = 0.0
             
             # Iterate over the training data
             for batch in tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}"):
-                # Get the images and targets (labels and bounding boxes)
                 images = batch['pixel_values'].to(device)
                 targets = batch['labels'].to(device)
                 boxes = batch['boxes'].to(device)
     
-                # Create a dictionary for the targets (DETR expects targets in a specific format)
+                # Create target dictionary (DETR expects this format)
                 target = {
                     "labels": targets,
                     "boxes": boxes
                 }
-    
+
                 # Zero the gradients
                 optimizer.zero_grad()
-    
-                # Forward pass: Compute predicted outputs by passing inputs to the model
+
+                # Forward pass: Compute predicted outputs
                 outputs = model(images, labels=target['labels'], pixel_values=images)
-    
-                # Losses are stored in outputs.logits
+
+                # Loss is stored in outputs.loss
                 loss = outputs.loss
                 epoch_loss += loss.item()
-    
+
                 # Backpropagation
                 loss.backward()
-    
+
                 # Update model parameters
                 optimizer.step()
-            
+
             # Print average loss for the epoch
             print(f"Epoch {epoch + 1}/{num_epochs} - Loss: {epoch_loss / len(train_loader)}")
-        
-        # Save the trained model's state_dict
+
+        # Step 5: Save the trained model's state_dict
         torch.save(model.state_dict(), "detr_model.pth")
         print("Model saved to 'detr_model.pth'")
-    
+
+    # Step 6: Call the train function
     train_model(data_dir=dataset_dir, num_epochs=10, learning_rate=1e-5)
 
 
