@@ -61,8 +61,8 @@ def main():
     # create_video_from_images(images_subfolder, output_video_path, frame_rate)
     # print(f"Video saved to {output_video_path}")
 
-    # Step 8: Generate heatmap
-    generate_heatmap('coco_annotations.json')
+    # # Step 8: Generate heatmap
+    # generate_heatmap('coco_annotations.json')
 
     # Step 9: Start the Training Process
     import torch
