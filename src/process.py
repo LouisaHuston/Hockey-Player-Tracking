@@ -212,6 +212,43 @@ def create_coco_annotations(annotations, images_folder):
 
     return coco_data
 
+def overlay_boxes(coco_json_path, images_folder, output_folder):
+    """Overlay bounding boxes on images based on COCO annotations and save the results."""
+    # Create the main output directory if it doesn't exist
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
+    # Load the COCO JSON file
+    with open(coco_json_path, 'r') as f:
+        coco_data = json.load(f)
+
+    # Group annotations by image_id
+    annotations_by_image = {}
+    for annotation in coco_data['annotations']:
+        image_id = annotation['image_id']
+        if image_id not in annotations_by_image:
+            annotations_by_image[image_id] = []
+        annotations_by_image[image_id].append(annotation)
+
+    # Process each image and overlay bounding boxes
+    for image_info in tqdm(coco_data['images'], desc="Overlaying boxes on images"):
+        image_file_name = image_info['file_name']
+        image_path = os.path.join(images_folder, image_file_name)
+
+        # Prepare output path in the specified output_folder
+        output_image_path = os.path.join(output_folder, image_file_name)
+        output_image_dir = os.path.dirname(output_image_path)
+
+        # Ensure the subdirectories for the output path exist
+        if not os.path.exists(output_image_dir):
+            os.makedirs(output_image_dir)
+
+        # Get the annotations for this image
+        image_id = image_info['id']
+        if image_id in annotations_by_image:
+            annotations = annotations_by_image[image_id]
+            draw_bounding_boxes(image_path, annotations, output_image_path)
+
 def draw_bounding_boxes(image_path, annotations, output_path):
     """Draw bounding boxes on an image and save the result."""
     # Load the image
@@ -240,43 +277,6 @@ def draw_bounding_boxes(image_path, annotations, output_path):
 
     # Save the image with bounding boxes
     cv2.imwrite(output_path, image)
-
-def overlay_boxes(coco_json_path, images_folder, output_folder):
-    """Overlay bounding boxes on images based on COCO annotations and save the results."""
-    # Create output directory if it doesn't exist
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
-
-    # Load the COCO JSON file
-    with open(coco_json_path, 'r') as f:
-        coco_data = json.load(f)
-
-    # Group annotations by image_id
-    annotations_by_image = {}
-    for annotation in coco_data['annotations']:
-        image_id = annotation['image_id']
-        if image_id not in annotations_by_image:
-            annotations_by_image[image_id] = []
-        annotations_by_image[image_id].append(annotation)
-
-    # Process each image and overlay bounding boxes
-    for image_info in tqdm(coco_data['images'], desc="Overlaying boxes on images"):
-        image_file_name = image_info['file_name']
-        image_path = os.path.join(images_folder, image_file_name)
-
-        # Prepare output path in the overlays/ folder
-        output_image_path = os.path.join(output_folder, image_file_name)
-        output_image_dir = os.path.dirname(output_image_path)
-
-        # Create subdirectories if they do not exist
-        if not os.path.exists(output_image_dir):
-            os.makedirs(output_image_dir)
-
-        # Get the annotations for this image
-        image_id = image_info['id']
-        if image_id in annotations_by_image:
-            annotations = annotations_by_image[image_id]
-            draw_bounding_boxes(image_path, annotations, output_image_path)
 
 def create_video_from_images(images_folder, output_video_path, frame_rate):
     """Create a video file from images in a specified folder."""
