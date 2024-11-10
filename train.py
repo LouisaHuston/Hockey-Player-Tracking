@@ -14,6 +14,7 @@ from src.process import (
     create_video_from_images,
     generate_heatmap,
 )
+from src.model import setup_model
 
 def main():
     # Step 1: Download the dataset
@@ -66,8 +67,6 @@ def main():
 
     # Step 9: Start the Training Process
     import torch
-    from src.model import setup_model
-    
     def train_model(data_dir, num_epochs=10):
         model, train_loader, device = setup_model(data_dir)
     
