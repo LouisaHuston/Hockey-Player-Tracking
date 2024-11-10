@@ -121,7 +121,7 @@ def main():
         torch.save(model.state_dict(), "detr_model.pth")
         print("Model saved to 'detr_model.pth'")
     
-    train_model(data_dir='path/to/your/data', num_epochs=10, learning_rate=1e-5)
+    train_model(data_dir=dataset_dir, num_epochs=10, learning_rate=1e-5)
 
 
 if __name__ == "__main__":
