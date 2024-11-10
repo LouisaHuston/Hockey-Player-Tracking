@@ -22,9 +22,6 @@ def main():
     dataset_dir = 'hockeyTrackingDataset'
     download_dataset(dataset_dir)
     
-    # Change current working directory to dataset_dir
-    os.chdir(dataset_dir)
-    
     # Step 2: Extract frames from videos
     root_folder = "clips"
     find_videos_and_extract_frames(root_folder)
