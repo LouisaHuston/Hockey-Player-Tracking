@@ -1,10 +1,3 @@
-import os
-import torch
-from torch.utils.data import DataLoader
-from transformers import DetrForObjectDetection, DetrImageProcessor
-from torchvision import transforms
-from co_detr.dataset import COCODataset  # Replace with your own dataset class if different
-
 def get_data_loader(images_dir, annotations_path, batch_size=4):
     """
     Create a data loader for the dataset with the specified batch size.
@@ -26,6 +19,13 @@ def setup_model(data_dir):
     Args:
         data_dir (str): Path to the data directory containing images and annotations.
     """
+    import os
+    import torch
+    from torch.utils.data import DataLoader
+    from transformers import DetrForObjectDetection, DetrImageProcessor
+    from torchvision import transforms
+    from co_detr.dataset import COCODataset  # Replace with your own dataset class if different
+    
     # Define the directories for images and annotations
     train_images_dir = os.path.join(data_dir, "images/train")
     test_images_dir = os.path.join(data_dir, "images/test")
