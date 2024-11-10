@@ -1,12 +1,16 @@
 # src/process.py
 
-import os
-import cv2
-import json
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from collections import defaultdict
+
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 import numpy as np
-from collections import defaultdict
-import matplotlib.pyplot as plt
+
+import multiprocessing
+import json
+import cv2
+import os
 
 def extract_frames(video_path, output_folder):
     """Extract frames from a video and save them as images."""
@@ -38,7 +42,7 @@ def extract_frames(video_path, output_folder):
     print(f"Completed extracting frames from {os.path.basename(video_path)} into {output_folder}")
 
 def find_videos_and_extract_frames(root_folder):
-    """Find all .mp4 files in the root_folder and extract their frames if they don't already exist."""
+    """Find all .mp4 files in the root_folder and extract their frames in parallel if they don't already exist."""
     video_files = []
 
     # Collect all video file paths
@@ -47,21 +51,36 @@ def find_videos_and_extract_frames(root_folder):
             if file.endswith(".mp4"):
                 video_files.append(os.path.join(dirpath, file))
 
-    # Process each video file
-    for video_path in video_files:
-        # Generate output path based on the video path
-        relative_path = os.path.relpath(os.path.dirname(video_path), root_folder)
-        video_name = os.path.splitext(os.path.basename(video_path))[0]
-        output_folder = os.path.join('images', relative_path, video_name)
+    # Get the number of CPUs available
+    num_cpus = multiprocessing.cpu_count()
 
-        # Check if the output folder exists and contains images
-        if os.path.exists(output_folder) and len(os.listdir(output_folder)) > 0:
-            print(f"Frames already exist for {video_path}. Skipping extraction.")
-            continue  # Skip extraction if frames are already present
+    # Process each video file in parallel
+    with ProcessPoolExecutor(max_workers=num_cpus) as executor:
+        # Submit all tasks
+        futures = [executor.submit(process_video, video_path, root_folder) for video_path in video_files]
 
-        # Extract frames if they don't already exist
-        extract_frames(video_path, output_folder)
-        print(f"Frames extracted for {video_path} into {output_folder}")
+        # Wait for all tasks to complete
+        for future in as_completed(futures):
+            try:
+                future.result()  # Retrieve the result to ensure exceptions are raised
+            except Exception as e:
+                print(f"An error occurred: {e}")
+
+def process_video(video_path, root_folder):
+    """Process a single video file by extracting frames if they don't already exist."""
+    # Generate output path based on the video path
+    relative_path = os.path.relpath(os.path.dirname(video_path), root_folder)
+    video_name = os.path.splitext(os.path.basename(video_path))[0]
+    output_folder = os.path.join('images', relative_path, video_name)
+
+    # Check if the output folder exists and contains images
+    if os.path.exists(output_folder) and len(os.listdir(output_folder)) > 0:
+        print(f"Frames already exist for {video_path}. Skipping extraction.")
+        return  # Skip extraction if frames are already present
+
+    # Extract frames if they don't already exist
+    extract_frames(video_path, output_folder)
+    print(f"Frames extracted for {video_path} into {output_folder}")
 
 def list_frames(root_dir, ext=".jpg"):
     """Create a list of all frame paths with the specified extension in the given root directory."""
