@@ -14,7 +14,7 @@ from src.process import (
     create_video_from_images,
     generate_heatmap,
 )
-from src.model import create_model
+from src.model import setup_model
 
 def main():
     # Step 1: Download the dataset
