@@ -67,16 +67,12 @@ def main():
 
     # Step 9: Start the Training Process
     def train_model(data_dir, num_epochs=10, learning_rate=1e-5):
-        # Step 1: Set up the model, data loaders, and device
         model, train_loader, test_loader, device = setup_model(data_dir)
         
-        # Step 2: Define the optimizer
         optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
         
-        # Step 3: Set model to training mode
         model.train()
 
-        # Step 4: Start the training loop
         for epoch in range(num_epochs):
             print(f"Starting epoch {epoch + 1}/{num_epochs}")
             epoch_loss = 0.0
@@ -112,11 +108,9 @@ def main():
             # Print average loss for the epoch
             print(f"Epoch {epoch + 1}/{num_epochs} - Loss: {epoch_loss / len(train_loader)}")
 
-        # Step 5: Save the trained model's state_dict
         torch.save(model.state_dict(), "detr_model.pth")
         print("Model saved to 'detr_model.pth'")
 
-    # Step 6: Call the train function
     train_model(data_dir=dataset_dir, num_epochs=10, learning_rate=1e-5)
 
 
