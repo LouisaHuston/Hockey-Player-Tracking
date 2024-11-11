@@ -25,9 +25,23 @@ This project focuses on tracking hockey players in game footage, utilizing machi
 
 ### Prerequisites
 
-Ensure you have Python 3.8 or higher installed. You can install the required dependencies using the following command:
+Ensure you have Python 3.8 or higher installed.
+
+### Virtual Environment Setup
+
+It is recommended to set up a virtual environment for managing dependencies. You can create a virtual environment named `hockey` and install the dependencies as follows:
 
 ```bash
+# Create a virtual environment
+python3 -m venv hockey
+
+# Activate the virtual environment
+# On macOS/Linux:
+source hockey/bin/activate
+# On Windows:
+hockey\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
