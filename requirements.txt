@@ -5,7 +5,6 @@ scipy
 
 # Machine learning libraries
 scikit-learn
-tensorflow     # or pytorch (depending on your framework preference)
 torch          # PyTorch - only include if you're using it
 torchvision    # Optional: for computer vision tasks in PyTorch
 
