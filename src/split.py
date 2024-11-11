@@ -20,6 +20,10 @@ def split_coco_json(annotations_path, output_dir, image_dir, train_file_name='tr
     train_image_ids = set(img['id'] for img in train_images)
     test_image_ids = set(img['id'] for img in test_images)
 
+    # Update image file names in JSON data to replace '/' with '_'
+    for img in train_images + test_images:
+        img['file_name'] = img['file_name'].replace('/', '_')
+
     # Filter annotations by image IDs
     train_annotations = [ann for ann in coco_data['annotations'] if ann['image_id'] in train_image_ids]
     test_annotations = [ann for ann in coco_data['annotations'] if ann['image_id'] in test_image_ids]
@@ -35,21 +39,21 @@ def split_coco_json(annotations_path, output_dir, image_dir, train_file_name='tr
     os.makedirs(train_image_dir, exist_ok=True)
     os.makedirs(test_image_dir, exist_ok=True)
 
-    # Save split annotations
+    # Save split annotations with updated file names
     with open(os.path.join(output_dir, train_file_name), 'w') as f:
         json.dump(train_data, f)
     with open(os.path.join(output_dir, test_file_name), 'w') as f:
         json.dump(test_data, f)
 
-    # Move images to train and test directories
+    # Move images to train and test directories with updated file names
     for img in train_images:
         img_file = img['file_name']
-        src_path = os.path.join(image_dir, img_file)
+        src_path = os.path.join(image_dir, img_file.replace('_', '/'))
         dst_path = os.path.join(train_image_dir, img_file)
         shutil.copy2(src_path, dst_path)
 
     for img in test_images:
         img_file = img['file_name']
-        src_path = os.path.join(image_dir, img_file)
+        src_path = os.path.join(image_dir, img_file.replace('_', '/'))
         dst_path = os.path.join(test_image_dir, img_file)
         shutil.copy2(src_path, dst_path)
