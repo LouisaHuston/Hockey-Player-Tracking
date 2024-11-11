@@ -3,6 +3,12 @@
 .venv/
 venv/
 
+# Project specific directories and files
+hockeyTrackingDataset/
+data/
+coco_annotations.json
+frame_list.txt
+
 # Byte-compiled or cached Python files
 *.py[cod]
 __pycache__/
