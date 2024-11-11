@@ -1,11 +1,13 @@
-import torch
+
 from torch.utils.data import DataLoader
 from transformers import DetrForObjectDetection, DetrImageProcessor
 from src.coco_dataset import COCODataset, collate_fn
 from src.detr import train_model
 from src.split import split_coco_json
+
+import torch
 import os
-import json
+
 def main():
     # Paths to dataset and annotations
     annotations_path = 'data/annotations/coco_annotations.json'
@@ -49,3 +51,6 @@ def main():
 
     # Start training
     train_model(train_dataloader, test_dataloader, model, optimizer, device)
+
+if __name__ == "__main__":
+    main()
