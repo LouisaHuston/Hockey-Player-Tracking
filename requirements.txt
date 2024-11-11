@@ -8,6 +8,7 @@ scikit-learn
 torch          # PyTorch - only include if you're using it
 torchvision    # Optional: for computer vision tasks in PyTorch
 transformers   # Optional: for NLP tasks in PyTorch
+timm           # Optional: for image classification in PyTorch
 
 # Visualization libraries
 matplotlib
