@@ -6,17 +6,28 @@ from src.detr import train_model
 from src.split import split_coco_json
 import os
 import json
-
 def main():
     # Paths to dataset and annotations
     annotations_path = 'data/annotations/coco_annotations.json'
-    train_annotations = 'data/annotations/train_annotations.json'
-    test_annotations = 'data/annotations/test_annotations.json'
+    train_annotations = 'train_annotations.json'
+    test_annotations = 'test_annotations.json'
+    annotations_output_dir = 'data/annotations'
     train_img_dir = 'data/images/train'
     test_img_dir = 'data/images/test'
+    img_dir = 'data/images'
 
-    # Split the dataset
-    split_coco_json(annotations_path, 'data/annotations', 'train_annotations.json', 'test_annotations.json')
+    # Ensure required directories exist
+    os.makedirs(annotations_output_dir, exist_ok=True)
+    os.makedirs(img_dir, exist_ok=True)
+
+    # Split the dataset into train and test sets
+    split_coco_json(
+        annotations_path=annotations_path,
+        output_dir=annotations_output_dir,
+        image_dir=img_dir,
+        train_file_name=train_annotations,
+        test_file_name=test_annotations
+    )
 
     # Load the pretrained DETR model and processor
     model = DetrForObjectDetection.from_pretrained("facebook/detr-resnet-50")
