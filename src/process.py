@@ -241,7 +241,7 @@ def overlay_boxes(coco_json_path, images_folder, output_folder):
         annotations_by_image[image_id].append(annotation)
 
     # Number of CPUs to divide tasks
-    num_vcpus = multiprocessing.cpu_count()
+    num_vcpus = 1 #multiprocessing.cpu_count() # Adjust as needed  - more might overload the computer
     images = coco_data['images']
     chunks = [images[i:i + num_vcpus] for i in range(0, len(images), num_vcpus)]
 
