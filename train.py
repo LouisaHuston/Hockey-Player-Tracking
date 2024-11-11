@@ -1,25 +1,10 @@
-# main.py
-
-from src.download_data import download_dataset
-from src.process import (
-    find_videos_and_extract_frames,
-    list_frames,
-    save_frames_to_file,
-    extract_annotations,
-    create_coco_annotations,
-    overlay_boxes,
-    create_video_from_images,
-    generate_heatmap,
-)
 from src.model import setup_model
 
 from torch import optim
 from tqdm import tqdm
 
-import torch
-import json
-import os
 import logging
+import torch
 
 # Configure logging to use green color
 logging.basicConfig(
@@ -27,103 +12,52 @@ logging.basicConfig(
     format="\033[92m%(message)s\033[0m"  # Green color
 )
 
-def main():
+# Step 9: Start the Training Process
+def train_model(data_dir, num_epochs=10, learning_rate=1e-5):
+    model, train_loader, test_loader, device = setup_model(data_dir)
     
-    # Step 1: Download the dataset
-    dataset_dir = 'hockeyTrackingDataset'
-    download_dataset(dataset_dir)
-    logging.info("Dataset downloaded successfully.")
+    optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
     
-    # Step 2: Extract frames from videos
-    root_folder = f"{dataset_dir}/clips"
-    find_videos_and_extract_frames(root_folder)
-    logging.info("Frames extracted from videos.")
-    
-    # Step 3: List frames and save to file
-    frames = list_frames('data/images')
-    output_file = 'frame_list.txt'
-    save_frames_to_file(frames, output_file)
-    logging.info(f"Successfully saved {len(frames)} frame paths to {output_file}")
-    
-    # Step 4: Extract annotations
-    test_root_folder = f"{dataset_dir}/MOT_Challenge_Sytle_Label/test/"
-    train_root_folder = f"{dataset_dir}/MOT_Challenge_Sytle_Label/train/"
-    test_annotations = extract_annotations(test_root_folder)
-    train_annotations = extract_annotations(train_root_folder)
-    annotations_array = test_annotations + train_annotations
-    logging.info("Annotations extracted.")
-    
-    # Step 5: Create COCO annotations
-    coco_data = create_coco_annotations(annotations_array, "data/images/")
-    
-    # Save the COCO annotations to a JSON file
-    with open('coco_annotations.json', 'w') as f:
-        json.dump(coco_data, f, indent=4, sort_keys=True)
-    logging.info("COCO JSON generated and saved as 'coco_annotations.json'.")
-    
-    # Step 6: Overlay bounding boxes on images
-    overlay_boxes('coco_annotations.json', 'data/images', 'data/overlays/')
-    logging.info(f"All images with overlays saved in 'data/overlays/'")
-    
-    # Step 7: Create video from images
-    images_subfolder = os.path.join('data/overlays/', 'allstar_2019', '001')  # Adjust the path as needed
-    output_video_path = 'output_video.mp4'
-    frame_rate = 30  # Adjust as needed
-    create_video_from_images(images_subfolder, output_video_path, frame_rate)
-    logging.info(f"Video saved to {output_video_path}")
-    
-    # Step 8: Generate heatmap
-    generate_heatmap('coco_annotations.json')
-    logging.info("Heatmap generated.")
-    
-    # Step 9: Start the Training Process
-    def train_model(data_dir, num_epochs=10, learning_rate=1e-5):
-        model, train_loader, test_loader, device = setup_model(data_dir)
+    model.train()
+
+    for epoch in range(num_epochs):
+        logging.info(f"Starting epoch {epoch + 1}/{num_epochs}")
+        epoch_loss = 0.0
         
-        optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
-        
-        model.train()
-    
-        for epoch in range(num_epochs):
-            logging.info(f"Starting epoch {epoch + 1}/{num_epochs}")
-            epoch_loss = 0.0
-            
-            # Iterate over the training data
-            for batch in tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}"):
-                images = batch['pixel_values'].to(device)
-                targets = batch['labels'].to(device)
-                boxes = batch['boxes'].to(device)
-    
-                # Create target dictionary (DETR expects this format)
-                target = {
-                    "labels": targets,
-                    "boxes": boxes
-                }
-    
-                # Zero the gradients
-                optimizer.zero_grad()
-    
-                # Forward pass: Compute predicted outputs
-                outputs = model(images, labels=target['labels'], pixel_values=images)
-    
-                # Loss is stored in outputs.loss
-                loss = outputs.loss
-                epoch_loss += loss.item()
-    
-                # Backpropagation
-                loss.backward()
-    
-                # Update model parameters
-                optimizer.step()
-    
-            # Print average loss for the epoch
-            logging.info(f"Epoch {epoch + 1}/{num_epochs} - Loss: {epoch_loss / len(train_loader)}")
-    
-        torch.save(model.state_dict(), "detr_model.pth")
-        logging.info("Model saved to 'detr_model.pth'")
-    
-    train_model(data_dir=dataset_dir, num_epochs=10, learning_rate=1e-5)
-    
+        # Iterate over the training data
+        for batch in tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}"):
+            images = batch['pixel_values'].to(device)
+            targets = batch['labels'].to(device)
+            boxes = batch['boxes'].to(device)
+
+            # Create target dictionary (DETR expects this format)
+            target = {
+                "labels": targets,
+                "boxes": boxes
+            }
+
+            # Zero the gradients
+            optimizer.zero_grad()
+
+            # Forward pass: Compute predicted outputs
+            outputs = model(images, labels=target['labels'], pixel_values=images)
+
+            # Loss is stored in outputs.loss
+            loss = outputs.loss
+            epoch_loss += loss.item()
+
+            # Backpropagation
+            loss.backward()
+
+            # Update model parameters
+            optimizer.step()
+
+        # Print average loss for the epoch
+        logging.info(f"Epoch {epoch + 1}/{num_epochs} - Loss: {epoch_loss / len(train_loader)}")
+
+    torch.save(model.state_dict(), "detr_model.pth")
+    logging.info("Model saved to 'detr_model.pth'")
 
 if __name__ == "__main__":
-    main()
+    train_model(data_dir=dataset_dir, num_epochs=10, learning_rate=1e-5)
+
