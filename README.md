@@ -90,6 +90,3 @@ Hockey-Player-Tracking/
 
 Contributions are welcome! Please fork the repository and submit a pull request for any feature additions or improvements.
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
