@@ -23,8 +23,7 @@ logging.basicConfig(
 )
 
 def main():
-    
-    # # Step 1: Download the dataset
+        # # Step 1: Download the dataset
     # dataset_dir = 'hockeyTrackingDataset'
     # download_dataset(dataset_dir)
     # logging.info("Dataset downloaded successfully.")

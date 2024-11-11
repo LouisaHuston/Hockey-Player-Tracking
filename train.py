@@ -38,6 +38,3 @@ def main():
 
     # Start training
     train_model(train_dataloader, test_dataloader, model, optimizer, device)
-
-if __name__ == "__main__":
-    main()
