@@ -40,8 +40,7 @@ def main():
     logging.info("Frames extracted from videos.")
     
     # Step 3: List frames and save to file
-    root_dir = f"{dataset_dir}/images"
-    frames = list_frames(root_dir)
+    frames = list_frames('data/images')
     output_file = 'frame_list.txt'
     save_frames_to_file(frames, output_file)
     logging.info(f"Successfully saved {len(frames)} frame paths to {output_file}")
@@ -55,21 +54,19 @@ def main():
     logging.info("Annotations extracted.")
     
     # Step 5: Create COCO annotations
-    images_folder = f"{dataset_dir}/images/"
-    coco_data = create_coco_annotations(annotations_array, images_folder)
+    coco_data = create_coco_annotations(annotations_array, "data/images/")
     
     # Save the COCO annotations to a JSON file
     with open('coco_annotations.json', 'w') as f:
-        json.dump(coco_data, f)
+        json.dump(coco_data, f, indent=4, sort_keys=True)
     logging.info("COCO JSON generated and saved as 'coco_annotations.json'.")
     
     # Step 6: Overlay bounding boxes on images
-    output_folder = 'data/overlays/'
-    overlay_boxes('coco_annotations.json', images_folder, output_folder)
-    logging.info(f"All images with overlays saved in {output_folder}")
+    overlay_boxes('coco_annotations.json', 'data/images', 'data/overlays/')
+    logging.info(f"All images with overlays saved in 'data/overlays/'")
     
     # Step 7: Create video from images
-    images_subfolder = os.path.join(output_folder, 'allstar_2019', '001')  # Adjust the path as needed
+    images_subfolder = os.path.join('data/overlays/', 'allstar_2019', '001')  # Adjust the path as needed
     output_video_path = 'output_video.mp4'
     frame_rate = 30  # Adjust as needed
     create_video_from_images(images_subfolder, output_video_path, frame_rate)

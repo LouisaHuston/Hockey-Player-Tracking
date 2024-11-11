@@ -8,9 +8,14 @@ from tqdm import tqdm
 import numpy as np
 
 import multiprocessing
+import logging
 import json
 import cv2
 import os
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
 
 def extract_frames(video_path, output_folder):
     """Extract frames from a video and save them as images."""
@@ -71,7 +76,7 @@ def process_video(video_path, root_folder):
     # Generate output path based on the video path
     relative_path = os.path.relpath(os.path.dirname(video_path), root_folder)
     video_name = os.path.splitext(os.path.basename(video_path))[0]
-    output_folder = os.path.join('images', relative_path, video_name)
+    output_folder = os.path.join('data/images', relative_path, video_name)
 
     # Check if the output folder exists and contains images
     if os.path.exists(output_folder) and len(os.listdir(output_folder)) > 0:
@@ -214,13 +219,18 @@ def create_coco_annotations(annotations, images_folder):
 
 def overlay_boxes(coco_json_path, images_folder, output_folder):
     """Overlay bounding boxes on images based on COCO annotations and save the results."""
+
     # Create the main output directory if it doesn't exist
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
     # Load the COCO JSON file
-    with open(coco_json_path, 'r') as f:
-        coco_data = json.load(f)
+    try:
+        with open(coco_json_path, 'r') as f:
+            coco_data = json.load(f)
+    except Exception as e:
+        print(f"Failed to load COCO JSON: {e}")
+        return
 
     # Group annotations by image_id
     annotations_by_image = {}
@@ -230,12 +240,24 @@ def overlay_boxes(coco_json_path, images_folder, output_folder):
             annotations_by_image[image_id] = []
         annotations_by_image[image_id].append(annotation)
 
-    # Process each image and overlay bounding boxes
-    for image_info in tqdm(coco_data['images'], desc="Overlaying boxes on images"):
+    # Number of CPUs to divide tasks
+    num_vcpus = multiprocessing.cpu_count()
+    images = coco_data['images']
+    chunks = [images[i:i + num_vcpus] for i in range(0, len(images), num_vcpus)]
+
+    # Process each chunk in parallel
+    with ProcessPoolExecutor(max_workers=num_vcpus) as executor:
+        futures = [executor.submit(process_image_chunk, chunk, images_folder, output_folder, annotations_by_image) for chunk in chunks]
+        
+        # Show progress bar for all chunks
+        for future in tqdm(as_completed(futures), total=len(futures), desc="Processing images"):
+            future.result()  # Ensure exceptions are raised if any
+
+def process_image_chunk(images_chunk, images_folder, output_folder, annotations_by_image):
+    """Process a chunk of images by overlaying bounding boxes and saving results."""
+    for image_info in images_chunk:
         image_file_name = image_info['file_name']
         image_path = os.path.join(images_folder, image_file_name)
-
-        # Prepare output path in the specified output_folder
         output_image_path = os.path.join(output_folder, image_file_name)
         output_image_dir = os.path.dirname(output_image_path)
 
@@ -262,12 +284,8 @@ def draw_bounding_boxes(image_path, annotations, output_path):
     for annotation in annotations:
         # Extract bounding box coordinates
         x, y, w, h = annotation['bbox']
-
-        # Calculate top-left and bottom-right coordinates
         top_left = (int(x), int(y))
         bottom_right = (int(x + w), int(y + h))
-
-        # Draw the bounding box
         cv2.rectangle(image, top_left, bottom_right, color=(0, 255, 0), thickness=2)
 
         # Optionally, add the player ID as text near the box
@@ -277,7 +295,7 @@ def draw_bounding_boxes(image_path, annotations, output_path):
 
     # Save the image with bounding boxes
     cv2.imwrite(output_path, image)
-
+    
 def create_video_from_images(images_folder, output_video_path, frame_rate):
     """Create a video file from images in a specified folder."""
     # Get list of images from the folder
