@@ -1,1 +1,59 @@
-/hockey
+# Virtual environment directories
+/hockey/
+.venv/
+venv/
+
+# Byte-compiled or cached Python files
+*.py[cod]
+__pycache__/
+*/__pycache__/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Environment and package files
+.env
+*.env
+
+# Logs
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Pytest or other test coverage results
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Distribution / packaging files
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Unit test / coverage reports
+.tox/
+.nox/
+.cache/
+*.cover
+*.py,cover
+
+# IDE / editor specific files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
