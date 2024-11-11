@@ -14,8 +14,6 @@ def main():
     train_annotations = 'train_annotations.json'
     test_annotations = 'test_annotations.json'
     annotations_output_dir = 'data/annotations'
-    train_img_dir = 'data/images/train'
-    test_img_dir = 'data/images/test'
     img_dir = 'data/images'
 
     # Ensure required directories exist
@@ -26,7 +24,6 @@ def main():
     split_coco_json(
         annotations_path=annotations_path,
         output_dir=annotations_output_dir,
-        image_dir=img_dir,
         train_file_name=train_annotations,
         test_file_name=test_annotations
     )
@@ -36,8 +33,8 @@ def main():
     processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
 
     # Create dataset instances
-    train_dataset = COCODataset(train_annotations, train_img_dir, processor)
-    test_dataset = COCODataset(test_annotations, test_img_dir, processor)
+    train_dataset = COCODataset(train_annotations, img_dir, processor)
+    test_dataset = COCODataset(test_annotations, img_dir, processor)
 
     # Use this custom collate function with DataLoader
     train_dataloader = DataLoader(train_dataset, batch_size=7, shuffle=True, collate_fn=collate_fn)
