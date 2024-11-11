@@ -1,67 +1,49 @@
-# test.py
 import torch
-import json
-import numpy as np
-from src.model import setup_model
-from src.dataset import COCODataset  # Make sure the path is correct
-from src.evaluation import (calculate_accuracy, calculate_precision, calculate_recall, calculate_f1_score)
+from torch.utils.data import DataLoader
+from transformers import DetrForObjectDetection, DetrImageProcessor
+from src.coco_dataset import COCODataset, collate_fn
 
-# Function to load the trained model
-def load_model(model, model_path='detr_model.pth'):
-    model.load_state_dict(torch.load(model_path))
-    model.eval()  # Set the model to evaluation mode
-    return model
-
-# Function to evaluate the model
-def evaluate_model(model, data_loader, device):
+def evaluate_model(test_dataloader, model, device):
     model.eval()
-    all_preds = []
-    all_labels = []
-    
+    test_running_loss = 0.0
+    total_batches = len(test_dataloader)
+
     with torch.no_grad():
-        for batch in data_loader:
-            images = batch['pixel_values'].to(device)
-            targets = batch['labels'].to(device)
-            boxes = batch['boxes'].to(device)
+        for batch_idx, (pixel_values, target) in enumerate(test_dataloader):
+            pixel_values = pixel_values.to(device)
+            target = [{k: v.to(device) for k, v in t.items()} for t in target]
 
-            # Run the model on the input batch
-            outputs = model(images)
-            
-            # Post-process the outputs (we're assuming output format for DETR)
-            logits = outputs.logits
-            prob = logits.softmax(-1)  # Calculate softmax over the classes
-            
-            # Convert to Numpy for easier handling in metrics
-            predicted_classes = prob.argmax(-1).cpu().numpy()
-            true_classes = targets.cpu().numpy()
-            
-            all_preds.extend(predicted_classes.flatten())  # Flatten the arrays
-            all_labels.extend(true_classes.flatten())       # Flatten the arrays
-    
-    return all_preds, all_labels
+            outputs = model(pixel_values=pixel_values, labels=target)
+            loss = outputs.loss
+            test_running_loss += loss.item()
 
-# Main function to test the model
+            if (batch_idx + 1) % 10 == 0 or (batch_idx + 1) == total_batches:
+                print(f"Batch {batch_idx + 1}/{total_batches}, Test Loss: {loss.item():.4f}")
+
+    avg_test_loss = test_running_loss / total_batches
+    print(f"Average Test Loss: {avg_test_loss:.4f}")
+
 def main():
-    # Load model and setup
-    dataset_dir = 'path_to_your_dataset'  # Replace with actual dataset directory path
-    model, train_loader, test_loader, device = setup_model(dataset_dir)
-    
-    # Load the trained model
-    model = load_model(model)
-    
-    # Evaluate the model on test data
-    all_preds, all_labels = evaluate_model(model, test_loader, device)
-    
-    # Calculate and print evaluation metrics
-    accuracy = calculate_accuracy(all_labels, all_preds)
-    precision = calculate_precision(all_labels, all_preds)
-    recall = calculate_recall(all_labels, all_preds)
-    f1 = calculate_f1_score(all_labels, all_preds)
-    
-    print(f"Accuracy: {accuracy:.4f}")
-    print(f"Precision: {precision:.4f}")
-    print(f"Recall: {recall:.4f}")
-    print(f"F1 Score: {f1:.4f}")
+    # Paths to dataset and annotations
+    test_annotations = 'data/annotations/test_annotations.json'
+    img_dir = 'data/images'
+    model_weights_path = 'weights/model_epoch_10.pth'  # Change this to the desired epoch checkpoint
+
+    # Load the pretrained DETR model and processor
+    model = DetrForObjectDetection.from_pretrained("facebook/detr-resnet-50")
+    processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
+
+    # Load the test dataset
+    test_dataset = COCODataset(test_annotations, img_dir, processor)
+    test_dataloader = DataLoader(test_dataset, batch_size=7, shuffle=False, collate_fn=collate_fn)
+
+    # Load saved model weights
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.load_state_dict(torch.load(model_weights_path))
+    model.to(device)
+
+    # Run evaluation
+    evaluate_model(test_dataloader, model, device)
 
 if __name__ == "__main__":
     main()
