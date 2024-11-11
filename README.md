@@ -38,8 +38,6 @@ python3 -m venv hockey
 # Activate the virtual environment
 # On macOS/Linux:
 source hockey/bin/activate
-# On Windows:
-hockey\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
