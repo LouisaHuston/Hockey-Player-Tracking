@@ -1,8 +1,5 @@
 # main.py
 
-import os
-import json
-
 from src.download_data import download_dataset
 from src.process import (
     find_videos_and_extract_frames,
@@ -15,6 +12,13 @@ from src.process import (
     generate_heatmap,
 )
 from src.model import setup_model
+
+from torch import optim
+from tqdm import tqdm
+
+import torch
+import json
+import os
 
 def main():
     
