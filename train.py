@@ -49,5 +49,8 @@ def main():
     # Start training
     train_model(train_dataloader, test_dataloader, model, optimizer, device)
 
+    # save model
+    torch.save(model.state_dict(), "models/trained_model.pth")
+
 if __name__ == "__main__":
     main()
