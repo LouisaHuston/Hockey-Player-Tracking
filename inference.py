@@ -93,7 +93,7 @@ def main():
     print(H)
 
     # 3) Run inference on those frames - save result in COCO format to data/annotations/inference.json
-    model_path = "path_to_your_trained_model"  # Replace with the path to your fine-tuned model
+    model_path = "models/trained_model.pth"
     model, processor = load_trained_model(model_path)
 
     inference_results = []
