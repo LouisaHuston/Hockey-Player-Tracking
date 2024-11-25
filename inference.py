@@ -5,6 +5,30 @@ import numpy as np
 from some_inference_model import run_inference  # hypothetical inference model
 from utils import save_annotations, save_video  # hypothetical utility functions
 
+# Function to manually select points in a frame
+def select_point(event, x, y, flags, param):
+    if event == cv2.EVENT_LBUTTONDOWN:
+        param.append((x, y))  # Add the clicked point to the points list
+        print(f"Point selected: ({x}, {y})")
+
+# Function to run object detection (assumes YOLOv5 or similar model)
+def detect_points_using_object_detection(frame):
+    # For example, assume you use a pre-trained YOLOv5 model
+    model = YOLOv5("yolov5s.pt")  # Replace with your model
+    results = model(frame)
+
+    # Example: Look for known objects (e.g., face-off dots or net corners)
+    points = []
+    for result in results.xywh[0]:
+        class_id = int(result[5])  # Class ID of the object
+        if class_id == 0:  # Assume 0 is the class ID for face-off dots
+            x, y, w, h = result[:4]
+            points.append((x, y))
+        elif class_id == 1:  # Assume 1 is the class ID for net corners
+            x, y, w, h = result[:4]
+            points.append((x, y))
+    return points
+
 def main():
     # 1) Extract frames from a video path you specify
     video_path = "path_to_your_video.mp4"  # Replace with your video path
@@ -27,22 +51,33 @@ def main():
     print(f"Extracted {frame_count} frames from {video_path}")
     
     # 2) Specify video relative location to the rink (using homography)
+    print("Manually selecting points or using object detection for reference points...")
 
-    # Define the coordinates of known points on the rink (in rink coordinates)
+    # Choose one of the following methods to extract points:
+    # Method 1: Manually select points (click on the face-off dots and net corners in a frame)
+    selected_points = []
+    frame_for_selecting_points = cv2.imread(os.path.join(output_dir, "frame_0.jpg"))
+    cv2.imshow("Select Points", frame_for_selecting_points)
+    cv2.setMouseCallback("Select Points", select_point, param=selected_points)
+    print("Click on the reference points (e.g., face-off dots, net corners).")
+    cv2.waitKey(0)  # Wait until you click points
+    cv2.destroyAllWindows()
+
+    # Method 2: Use object detection to detect points in the frame
+    # selected_points = detect_points_using_object_detection(frame_for_selecting_points)
+
+    print("Selected points (pixel coordinates):", selected_points)
+
+    # Now, set the rink coordinates for these points. Replace these with actual rink coordinates
     rink_points = np.array([
-        [30, 22],  # Defensive zone face-off dot 1 (known rink coordinate)
-        [30, 63],  # Defensive zone face-off dot 2 (known rink coordinate)
-        [10, 39.5],  # Top left corner of the net (known rink coordinate)
-        [10, 45.5]   # Top right corner of the net (known rink coordinate)
+        [170 22],  # Defensive zone face-off dot 1 (known rink coordinate)
+        [170, 63],  # Defensive zone face-off dot 2 (known rink coordinate)
+        [190, 39.5],  # Top left corner of the net (known rink coordinate)
+        [190, 45.5]   # Top right corner of the net (known rink coordinate)
     ], dtype='float32')
 
     # Define the corresponding points in the video frame (in pixel coordinates)
-    video_points = np.array([
-        [u1, v1],  # Corresponding point for rink_point[0]
-        [u2, v2],  # Corresponding point for rink_point[1]
-        [u3, v3],  # Corresponding point for rink_point[2]
-        [u4, v4]   # Corresponding point for rink_point[3]
-    ], dtype='float32')
+    video_points = np.array(selected_points, dtype='float32')
 
     # Calculate the homography matrix
     H, _ = cv2.findHomography(video_points, rink_points)
