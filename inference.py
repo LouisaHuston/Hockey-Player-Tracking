@@ -1,9 +1,10 @@
 import cv2
 import os
 import json
+import torch
+from transformers import DetrForObjectDetection, DetrImageProcessor
 import numpy as np
-from some_inference_model import run_inference  # hypothetical inference model
-from utils import save_annotations, save_video  # hypothetical utility functions
+from utils import save_annotations  # hypothetical utility function to save annotations
 
 # Function to manually select points in a frame
 def select_point(event, x, y, flags, param):
@@ -11,23 +12,32 @@ def select_point(event, x, y, flags, param):
         param.append((x, y))  # Add the clicked point to the points list
         print(f"Point selected: ({x}, {y})")
 
-# Function to run object detection (assumes YOLOv5 or similar model)
-def detect_points_using_object_detection(frame):
-    # For example, assume you use a pre-trained YOLOv5 model
-    model = YOLOv5("yolov5s.pt")  # Replace with your model
-    results = model(frame)
+# Function to load your trained DETR model
+def load_trained_model(model_path):
+    # Load your fine-tuned DETR model and processor
+    model = DetrForObjectDetection.from_pretrained(model_path)  # Replace with path to your model
+    processor = DetrImageProcessor.from_pretrained(model_path)  # Same path for processor
+    model.eval()  # Set the model to evaluation mode
+    return model, processor
 
-    # Example: Look for known objects (e.g., face-off dots or net corners)
-    points = []
-    for result in results.xywh[0]:
-        class_id = int(result[5])  # Class ID of the object
-        if class_id == 0:  # Assume 0 is the class ID for face-off dots
-            x, y, w, h = result[:4]
-            points.append((x, y))
-        elif class_id == 1:  # Assume 1 is the class ID for net corners
-            x, y, w, h = result[:4]
-            points.append((x, y))
-    return points
+# Function to run inference on a single frame using DETR
+def run_inference(model, processor, frame):
+    # Preprocess the frame to be in the format that DETR expects
+    inputs = processor(images=frame, return_tensors="pt")
+    
+    # Run inference
+    with torch.no_grad():
+        outputs = model(**inputs)
+    
+    # Post-process the outputs to get bounding boxes, labels, and scores
+    target_sizes = torch.tensor([frame.shape[0], frame.shape[1]])  # Use the frame's height and width
+    results = processor.post_process_object_detection(outputs, target_sizes=target_sizes, threshold=0.9)[0]
+    
+    boxes = results["boxes"].cpu().numpy()
+    labels = results["labels"].cpu().numpy()
+    scores = results["scores"].cpu().numpy()
+    
+    return boxes, labels, scores
 
 def main():
     # 1) Extract frames from a video path you specify
@@ -63,17 +73,14 @@ def main():
     cv2.waitKey(0)  # Wait until you click points
     cv2.destroyAllWindows()
 
-    # Method 2: Use object detection to detect points in the frame
-    # selected_points = detect_points_using_object_detection(frame_for_selecting_points)
-
     print("Selected points (pixel coordinates):", selected_points)
 
     # Now, set the rink coordinates for these points. Replace these with actual rink coordinates
     rink_points = np.array([
-        [170 22],  # Defensive zone face-off dot 1 (known rink coordinate)
-        [170, 63],  # Defensive zone face-off dot 2 (known rink coordinate)
-        [190, 39.5],  # Top left corner of the net (known rink coordinate)
-        [190, 45.5]   # Top right corner of the net (known rink coordinate)
+        [0, 0],  # Defensive zone face-off dot 1 (known rink coordinate)
+        [0, 1],  # Defensive zone face-off dot 2 (known rink coordinate)
+        [0, 2],  # Top left corner of the net (known rink coordinate)
+        [0, 3]   # Top right corner of the net (known rink coordinate)
     ], dtype='float32')
 
     # Define the corresponding points in the video frame (in pixel coordinates)
@@ -86,21 +93,24 @@ def main():
     print(H)
 
     # 3) Run inference on those frames - save result in COCO format to data/annotations/inference.json
+    model_path = "path_to_your_trained_model"  # Replace with the path to your fine-tuned model
+    model, processor = load_trained_model(model_path)
+
     inference_results = []
     for frame_index in range(frame_count):
         frame_path = os.path.join(output_dir, f"frame_{frame_index}.jpg")
         frame = cv2.imread(frame_path)
 
         # Run inference to detect objects/people in the frame
-        detections = run_inference(frame)  # Assuming run_inference returns a list of detected bounding boxes
+        boxes, labels, scores = run_inference(model, processor, frame)  # Use your fine-tuned DETR for inference
         
         # Format results in COCO format
-        for detection in detections:
+        for i in range(len(boxes)):
             result = {
                 "image_id": frame_index,
-                "bbox": detection['bbox'],  # [x, y, w, h] format
-                "category_id": detection['category_id'],
-                "score": detection['score']
+                "bbox": boxes[i].tolist(),  # Convert to list if needed
+                "category_id": labels[i].item(),  # Assuming labels are integers
+                "score": scores[i].item()  # Confidence score
             }
             inference_results.append(result)
     
@@ -176,18 +186,4 @@ def predict_location_on_rink(bbox, H):
     rink_point = apply_homography_to_point(frame_point, H)
     
     # Return the predicted position on the rink
-    return (rink_point[0] - w // 2, rink_point[1] - h // 2, w, h)  # Adjust back to bbox location
-
-def apply_homography_to_point(frame_point, H):
-    """
-    Applies the homography matrix to a point in the video frame and returns the corresponding point on the rink.
-    """
-    frame_point_homogeneous = np.array([frame_point[0], frame_point[1], 1], dtype='float32')
-    rink_point_homogeneous = np.dot(H, frame_point_homogeneous)
-    
-    # Normalize the result to get the actual rink coordinates
-    rink_point = rink_point_homogeneous[:2] / rink_point_homogeneous[2]
-    return rink_point
-
-if __name__ == '__main__':
-    main()
+    return (rink)
