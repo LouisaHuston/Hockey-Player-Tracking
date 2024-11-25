@@ -109,10 +109,10 @@ def main():
     cv2.destroyAllWindows()
 
     rink_points = np.array([
-        [0, 0],  # Replace with actual rink coordinates
-        [0, 1],
-        [0, 2],
-        [0, 3]
+        [170, 22],  # Replace with actual rink coordinates
+        [170, 63],
+        [190, 39.5],
+        [190, 45.5]
     ], dtype='float32')
 
     video_points = np.array(selected_points, dtype='float32')
