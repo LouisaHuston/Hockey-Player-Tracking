@@ -26,10 +26,30 @@ def main():
     video_capture.release()
     print(f"Extracted {frame_count} frames from {video_path}")
     
-    # 2) Specify video relative location to the rink (e.g., Coordinates, transformation matrix)
-    # Assuming we have some method to define or calculate the rink location on each frame.
-    rink_area = (100, 100, 800, 600)  # Placeholder, you may need to compute this based on video or manually
-    
+    # 2) Specify video relative location to the rink (using homography)
+
+    # Define the coordinates of known points on the rink (in rink coordinates)
+    rink_points = np.array([
+        [30, 22],  # Defensive zone face-off dot 1 (known rink coordinate)
+        [30, 63],  # Defensive zone face-off dot 2 (known rink coordinate)
+        [10, 39.5],  # Top left corner of the net (known rink coordinate)
+        [10, 45.5]   # Top right corner of the net (known rink coordinate)
+    ], dtype='float32')
+
+    # Define the corresponding points in the video frame (in pixel coordinates)
+    video_points = np.array([
+        [u1, v1],  # Corresponding point for rink_point[0]
+        [u2, v2],  # Corresponding point for rink_point[1]
+        [u3, v3],  # Corresponding point for rink_point[2]
+        [u4, v4]   # Corresponding point for rink_point[3]
+    ], dtype='float32')
+
+    # Calculate the homography matrix
+    H, _ = cv2.findHomography(video_points, rink_points)
+
+    print("Homography Matrix:")
+    print(H)
+
     # 3) Run inference on those frames - save result in COCO format to data/annotations/inference.json
     inference_results = []
     for frame_index in range(frame_count):
@@ -66,7 +86,7 @@ def main():
         bbox = annotation['bbox']
         
         # Predict the location of the bounding box on the rink
-        predicted_location = predict_location_on_rink(bbox, rink_area)  # Placeholder function
+        predicted_location = predict_location_on_rink(bbox, H)  # Using homography to get rink coordinates
         predicted_locations[frame_id] = predicted_locations.get(frame_id, []) + [predicted_location]
 
     print("Predicted locations for bounding boxes.")
@@ -109,19 +129,30 @@ def main():
     video_writer.release()
     print(f"Saved the movie to {video_output_path}")
 
-def predict_location_on_rink(bbox, rink_area):
+def predict_location_on_rink(bbox, H):
     """
     Example function that predicts where a bounding box might be located on the rink.
-    You can define your own logic to map detected objects to positions on the rink.
+    It uses the homography transformation to map the bbox from the video frame to the rink coordinates.
     """
     x, y, w, h = bbox
-    rink_x, rink_y, rink_w, rink_h = rink_area
+    frame_point = (x + w // 2, y + h // 2)  # Taking the center of the bbox
     
-    # Transform the bbox coordinates to be relative to the rink (this is a placeholder)
-    predicted_x = max(0, min(rink_x + (x % rink_w), rink_x + rink_w))
-    predicted_y = max(0, min(rink_y + (y % rink_h), rink_y + rink_h))
+    # Apply the homography transformation
+    rink_point = apply_homography_to_point(frame_point, H)
     
-    return (predicted_x, predicted_y, w, h)
+    # Return the predicted position on the rink
+    return (rink_point[0] - w // 2, rink_point[1] - h // 2, w, h)  # Adjust back to bbox location
+
+def apply_homography_to_point(frame_point, H):
+    """
+    Applies the homography matrix to a point in the video frame and returns the corresponding point on the rink.
+    """
+    frame_point_homogeneous = np.array([frame_point[0], frame_point[1], 1], dtype='float32')
+    rink_point_homogeneous = np.dot(H, frame_point_homogeneous)
+    
+    # Normalize the result to get the actual rink coordinates
+    rink_point = rink_point_homogeneous[:2] / rink_point_homogeneous[2]
+    return rink_point
 
 if __name__ == '__main__':
     main()
