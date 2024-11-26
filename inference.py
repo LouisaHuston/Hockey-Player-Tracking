@@ -59,8 +59,8 @@ def save_annotations(annotations, output_path):
                 {
                     "id": image_id,
                     "file_name": f"frame_{image_id}.jpg",  # Assuming frame names are sequential like "frame_0.jpg"
-                    "height": 720,  # Replace with actual height
-                    "width": 1280,  # Replace with actual width
+                    "height": 720,
+                    "width": 1280,
                 }
             )
 
