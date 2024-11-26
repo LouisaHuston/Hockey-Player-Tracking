@@ -37,10 +37,11 @@ def main():
     train_dataset = COCODataset(f'data/annotations/{train_annotations}', img_dir, processor, max_images=800)
     test_dataset = COCODataset(f'data/annotations/{test_annotations}', img_dir, processor, max_images=200)
 
-    # Save the test JSON
+    # Save the test annotations
     output_path = 'test.json'
     with open(output_path, "w") as json_file:
-        json.dump(test_dataset, json_file, indent=4)
+        json.dump(test_dataset.coco, json_file, indent=4)
+
     
     # Use this custom collate function with DataLoader
     train_dataloader = DataLoader(train_dataset, batch_size=7, shuffle=True, collate_fn=collate_fn)
