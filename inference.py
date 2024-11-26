@@ -181,9 +181,9 @@ def main():
         ]
 
     # 5) Annotate frames with predicted locations and save
-    rink_image_path = "path_to_rink_image.jpg"  # Path to rink image
+    rink_image_path = "assets/rink_image.jpg"  # Path to rink image
     rink_image = cv2.imread(rink_image_path)
-    rink_width, rink_height = 1920, 1080  # Example rink image dimensions (set according to your needs)
+    rink_width, rink_height = 397, 200
     
     output_frame_dir = "data/annotated_frames"
     os.makedirs(output_frame_dir, exist_ok=True)
