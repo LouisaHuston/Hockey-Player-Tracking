@@ -1,34 +1,15 @@
-# Core libraries
-numpy
-pandas
-scipy
+# Object detection and transformer libraries
+transformers>=4.0.0
+datasets>=1.0.0
+torch>=1.9.0
+torchvision>=0.10.0
+timm>=0.4.5
+torchmetrics
 
-# Machine learning libraries
-scikit-learn
-torch          # PyTorch - only include if you're using it
-torchvision    # Optional: for computer vision tasks in PyTorch
-transformers   # Optional: for NLP tasks in PyTorch
-timm           # Optional: for image classification in PyTorch
-
-# Visualization libraries
-matplotlib
-seaborn
-plotly        # for interactive visualizations
-
-# Computer vision
-opencv-python
-
-# Progress bar
-tqdm
-
-# Additional utilities
-joblib        # for saving/loading models
-h5py          # for handling .h5 files (common in deep learning)
-pillow        # image processing library
-requests      # for making HTTP requests (useful for data download scripts)
-PyYAML        # for configuration files in YAML format
-
-# Data handling and transformation
-imageio       # for reading and writing images
-scikit-image  # for image processing tasks
-albumentations # for image augmentation (useful in computer vision tasks)
+# Optional: Specify versions if needed or remove if using latest versions automatically
+# If there's any specific version of a library you need, you can specify it like this:
+# transformers==4.25.1
+# datasets==2.6.1
+# torch==1.12.0
+# torchvision==0.13.0
+# timm==0.6.12
