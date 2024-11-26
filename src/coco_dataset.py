@@ -4,8 +4,9 @@ from PIL import Image
 import torch
 from torch.utils.data import Dataset
 
+# Define a custom dataset for loading COCO-style annotations
 class COCODataset(Dataset):
-    def __init__(self, annotations_file, img_dir, processor, category_id_to_class_index=None, max_images=None):
+    def __init__(self, annotations_file, img_dir, processor):
         with open(annotations_file) as f:
             self.coco = json.load(f)
 
@@ -13,23 +14,6 @@ class COCODataset(Dataset):
         self.images = self.coco['images']
         self.annotations = self.coco['annotations']
         self.processor = processor
-
-        # Limit the number of images if max_images is specified
-        if max_images is not None:
-            self.images = self.images[:max_images]
-            # Get the IDs of the selected images
-            image_ids = set(img['id'] for img in self.images)
-            # Filter annotations to include only those for the selected images
-            self.annotations = [ann for ann in self.annotations if ann['image_id'] in image_ids]
-
-        # Create category_id to class_index mapping
-        if category_id_to_class_index is None:
-            # Assuming your single class has category_id 1
-            self.category_id_to_class_index = {0: 0, 1: 1}  # 0: background, 1: player
-        else:
-            self.category_id_to_class_index = category_id_to_class_index
-
-        self.num_classes = len(self.category_id_to_class_index)
 
     def __len__(self):
         return len(self.images)
@@ -63,27 +47,17 @@ class COCODataset(Dataset):
             y_max /= image_height
 
             boxes.append([x_min, y_min, x_max, y_max])
-            # Map category_id to class_index
-            labels.append(self.category_id_to_class_index[ann['category_id']])
+            labels.append(ann['category_id'])
 
-        # Handle case with no annotations (empty image)
-        if boxes:
-            boxes = torch.tensor(boxes, dtype=torch.float32)
-            labels = torch.tensor(labels, dtype=torch.int64)
-        else:
-            boxes = torch.zeros((0, 4), dtype=torch.float32)
-            labels = torch.tensor([], dtype=torch.int64)
-
-        # Ensure labels are not empty; if so, assign background label
-        if labels.numel() == 0:
-            labels = torch.tensor([0], dtype=torch.int64)  # Background class
-            boxes = torch.zeros((1, 4), dtype=torch.float32)  # Dummy box
+        boxes = torch.tensor(boxes, dtype=torch.float32)
+        labels = torch.tensor(labels, dtype=torch.int64)
 
         encoding = self.processor(images=image, return_tensors="pt")
 
         target = {'boxes': boxes, 'labels': labels}
 
         return encoding['pixel_values'].squeeze(0), target
+
 
 def collate_fn(batch):
     pixel_values = []
