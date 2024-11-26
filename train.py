@@ -6,6 +6,7 @@ from src.detr import train_model
 from src.split import split_coco_json
 
 import torch
+import json
 import os
 
 def main():
