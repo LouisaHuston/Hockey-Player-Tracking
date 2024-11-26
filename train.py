@@ -2,7 +2,7 @@
 from torch.utils.data import DataLoader
 from transformers import DetrForObjectDetection, DetrImageProcessor
 from src.coco_dataset import COCODataset, collate_fn
-from src.detr import train_model
+from src.train_detr import train_model
 from src.split import split_coco_json
 
 import torch
