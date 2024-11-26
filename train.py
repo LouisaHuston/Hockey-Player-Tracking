@@ -27,6 +27,8 @@ def main():
         train_file_name=train_annotations,
         test_file_name=test_annotations
     )
+
+    processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
     
     # Create dataset instances
     train_dataset = COCODataset(
@@ -45,7 +47,6 @@ def main():
         num_labels=train_dataset.num_classes,
         ignore_mismatched_sizes=True
     )
-    processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
 
     # Use this custom collate function with DataLoader
     train_dataloader = DataLoader(train_dataset, batch_size=7, shuffle=True, collate_fn=collate_fn)
