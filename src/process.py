@@ -198,7 +198,7 @@ def create_coco_annotations(annotations, images_folder):
         coco_annotation = {
             "id": annotation_id,
             "image_id": image_map[file_path],
-            "category_id": category_map[player_id],
+            "category_id": 1, #category_map[player_id],
             "bbox": annotation["bbox"],
             "score": annotation["confidence"],
             "tracklet_id": annotation["tracklet_id"],
