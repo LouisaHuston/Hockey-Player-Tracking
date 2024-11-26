@@ -33,8 +33,8 @@ def main():
     processor = DetrImageProcessor.from_pretrained("facebook/detr-resnet-50")
 
     # Create dataset instances
-    train_dataset = COCODataset(f'data/annotations/{train_annotations}', img_dir, processor, max_images=800)
-    test_dataset = COCODataset(f'data/annotations/{test_annotations}', img_dir, processor, max_images=200)
+    train_dataset = COCODataset(f'data/annotations/{train_annotations}', img_dir, processor)#, max_images=800)
+    test_dataset = COCODataset(f'data/annotations/{test_annotations}', img_dir, processor)#, max_images=200)
 
     # Use this custom collate function with DataLoader
     train_dataloader = DataLoader(train_dataset, batch_size=7, shuffle=True, collate_fn=collate_fn)
