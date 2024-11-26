@@ -81,13 +81,23 @@ def save_annotations(annotations, output_path):
         json.dump(coco_format, f)
     print(f"Annotations saved to {output_path}")
 
-# Function to apply homography transformation to a point
+# Function to apply homography to a point
 def apply_homography_to_point(point, H):
     point_homogeneous = np.array([point[0], point[1], 1])
     transformed_point = np.dot(H, point_homogeneous)
     x_rink = transformed_point[0] / transformed_point[2]
     y_rink = transformed_point[1] / transformed_point[2]
     return (x_rink, y_rink)
+
+# Function to draw the predicted locations on the rink image
+def draw_on_rink(predicted_location, rink_image, rink_width, rink_height):
+    # Scale the location based on the desired rink image dimensions
+    scaled_x = int(predicted_location[0] * rink_width)
+    scaled_y = int(predicted_location[1] * rink_height)
+    
+    # Draw a circle (black) on the rink image
+    cv2.circle(rink_image, (scaled_x, scaled_y), 5, (0, 0, 0), -1)
+    return rink_image
 
 def main():
     # 1) Extract frames from a video path you specify
@@ -164,46 +174,52 @@ def main():
         frame_id = annotation["image_id"]
         bbox = annotation["bbox"]
         predicted_location = apply_homography_to_point(
-            (bbox[0] + bbox[2] / 2, bbox[1] + bbox[3] / 2), H
+            (bbox[0] + bbox[2] / 2, bbox[1] + bbox[3]), H  # Bottom center of the bbox
         )
         predicted_locations[frame_id] = predicted_locations.get(frame_id, []) + [
             predicted_location
         ]
 
     # 5) Annotate frames with predicted locations and save
+    rink_image_path = "path_to_rink_image.jpg"  # Path to rink image
+    rink_image = cv2.imread(rink_image_path)
+    rink_width, rink_height = 1920, 1080  # Example rink image dimensions (set according to your needs)
+    
     output_frame_dir = "data/annotated_frames"
     os.makedirs(output_frame_dir, exist_ok=True)
 
-    for frame_index in range(frame_count):
-        frame_path = os.path.join(output_dir, f"frame_{frame_index}.jpg")
-        frame = cv2.imread(frame_path)
-
-        for location in predicted_locations.get(frame_index, []):
-            x, y = location
-            cv2.circle(frame, (int(x), int(y)), 5, (0, 255, 0), -1)
-
-        annotated_frame_path = os.path.join(
-            output_frame_dir, f"annotated_frame_{frame_index}.jpg"
-        )
-        cv2.imwrite(annotated_frame_path, frame)
-
-    # 6) Turn all those frames into a movie
-    video_output_path = "data/output_movie.mp4"
-    frame_files = sorted(
-        [f for f in os.listdir(output_frame_dir) if f.endswith(".jpg")]
-    )
-
-    first_frame = cv2.imread(os.path.join(output_frame_dir, frame_files[0]))
+    # 6) Video for regular frames with predicted bounding boxes
+    video_output_path_with_bboxes = "data/output_with_bboxes.mp4"
+    first_frame = cv2.imread(os.path.join(output_dir, f"frame_0.jpg"))
     height, width, _ = first_frame.shape
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    video_writer = cv2.VideoWriter(video_output_path, fourcc, 30.0, (width, height))
+    video_writer_with_bboxes = cv2.VideoWriter(video_output_path_with_bboxes, fourcc, 30.0, (width, height))
 
-    for frame_file in frame_files:
-        frame = cv2.imread(os.path.join(output_frame_dir, frame_file))
-        video_writer.write(frame)
+    # 7) Video for blank rink images with black circles
+    video_output_path_with_rink = "data/output_with_rink.mp4"
+    video_writer_with_rink = cv2.VideoWriter(video_output_path_with_rink, fourcc, 30.0, (rink_width, rink_height))
 
-    video_writer.release()
-    print(f"Saved the movie to {video_output_path}")
+    for frame_index in range(frame_count):
+        # 7.1) Frame with predicted bounding boxes
+        frame_path = os.path.join(output_dir, f"frame_{frame_index}.jpg")
+        frame = cv2.imread(frame_path)
+        boxes, _, _ = model_handler.run_inference(frame)
+        for bbox in boxes:
+            # Draw the bounding boxes on the frame
+            x_min, y_min, x_max, y_max = map(int, bbox)
+            cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (0, 255, 0), 2)
+        video_writer_with_bboxes.write(frame)
+
+        # 7.2) Blank rink image with predicted locations
+        rink_frame = rink_image.copy()
+        for location in predicted_locations.get(frame_index, []):
+            rink_frame = draw_on_rink(location, rink_frame, rink_width, rink_height)
+        video_writer_with_rink.write(rink_frame)
+
+    video_writer_with_bboxes.release()
+    video_writer_with_rink.release()
+    print(f"Saved the video with bounding boxes to {video_output_path_with_bboxes}")
+    print(f"Saved the rink video with circles to {video_output_path_with_rink}")
 
 if __name__ == "__main__":
     main()
