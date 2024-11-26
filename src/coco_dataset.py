@@ -4,9 +4,8 @@ from PIL import Image
 import torch
 from torch.utils.data import Dataset
 
-# Define a custom dataset for loading COCO-style annotations
 class COCODataset(Dataset):
-    def __init__(self, annotations_file, img_dir, processor):
+    def __init__(self, annotations_file, img_dir, processor, max_images=None):
         with open(annotations_file) as f:
             self.coco = json.load(f)
 
@@ -14,6 +13,14 @@ class COCODataset(Dataset):
         self.images = self.coco['images']
         self.annotations = self.coco['annotations']
         self.processor = processor
+
+        # Limit the number of images if max_images is specified
+        if max_images is not None:
+            self.images = self.images[:max_images]
+            # Get the IDs of the selected images
+            image_ids = set(img['id'] for img in self.images)
+            # Filter annotations to include only those for the selected images
+            self.annotations = [ann for ann in self.annotations if ann['image_id'] in image_ids]
 
     def __len__(self):
         return len(self.images)
