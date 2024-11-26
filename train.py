@@ -37,6 +37,8 @@ def main():
     train_dataset = COCODataset(f'data/annotations/{train_annotations}', img_dir, processor, max_images=800)
     test_dataset = COCODataset(f'data/annotations/{test_annotations}', img_dir, processor, max_images=200)
 
+    print(test_dataset)
+    
     # Save the test annotations
     output_path = 'test.json'
     with open(output_path, "w") as json_file:
