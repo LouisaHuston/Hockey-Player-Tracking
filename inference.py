@@ -101,7 +101,7 @@ def draw_on_rink(predicted_location, rink_image, rink_width, rink_height):
 
 def main():
     # 1) Extract frames from a video path you specify
-    video_path = "path_to_your_video.mp4"
+    video_path = "assets/IMG-2113.mov"
     output_dir = "data/frames"
     os.makedirs(output_dir, exist_ok=True)
 
