@@ -2,6 +2,9 @@
 /hockey/
 .venv/
 venv/
+/pretrained/
+/training/
+/wandb/
 
 # Project specific directories and files
 hockeyTrackingDataset/

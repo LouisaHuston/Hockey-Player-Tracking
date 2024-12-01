@@ -22,32 +22,19 @@ import json
 import glob
 import os
 
-def main(safety_set, split_ratio, images_annotation_split):
+def main(safety_set, split_ratio):
 
     # Make the directory for saving the jsons and plots
     os.makedirs(f'{safety_set}', exist_ok=True)
 
     # Gather all the annotation jsons in the data folder
-    annotations = gather_annotations(safety_set)
+    annotations = gather_annotations()
 
     # Split the annotations into train and val
-    if images_annotation_split == 'images':
-        train, val, train_counts, val_counts, categories = split_images(safety_set, annotations, split_ratio)
-    elif images_annotation_split == 'annotations':
-        train, val, train_counts, val_counts, categories = split_annotations(safety_set, annotations, split_ratio)
-    else: 
-        return
+    train, val, train_counts, val_counts, categories = split_images(safety_set, annotations, split_ratio)
 
     # Plot the category distribution
     plot_category_distribution(safety_set, train_counts, val_counts, categories)
-
-    # Move the images to the train and val folders
-    move_images(train, f'{safety_set}_train')
-    move_images(val, f'{safety_set}_val')
-
-    # Check to make sure all the annotations' images are in the images folder
-    check_images_annotations(train, f'{safety_set}_train')
-    check_images_annotations(val, f'{safety_set}_val')
 
 def check_images_annotations(data_set, folder):
 
@@ -265,85 +252,67 @@ def plot_category_distribution(safety_set, train_counts, val_counts, categories_
     plt.tight_layout()  # Adjust layout to make room for label rotation
     plt.savefig(f'{safety_set}/{safety_set}_category_distribution.png', bbox_inches='tight')
 
-def move_images(data_set, folder):
-
-    # Create the destination folder if it doesn't exist
-    dest_folder = f'data/{folder}_images'
-    os.makedirs(dest_folder, exist_ok=True)
-
-    # Get the list of image IDs to move
-    image_ids = set(image['file_name'] for image in data_set['images'])
-
-    # Define supported image extensions
-    image_extensions = ['.jpg', '.png', '.jpeg']
-
-    # Move all the images to a single folder
-    for path in tqdm(glob.glob('data/annotations/**/*', recursive=True), desc=f"Moving Images to {folder} Folder"):
-        if os.path.isfile(path) and path.lower().endswith(tuple(image_extensions)):
-            image_id = os.path.basename(path)
-            if image_id in image_ids:
-                shutil.copy(path, dest_folder)
-
-def gather_annotations(safety_set):
+def gather_annotations():
     coco_annotations = {'images': [], 'annotations': [], 'categories': []}
     max_image_id = 0
     max_annotation_id = 0
     image_id_set = set()
     image_filename_set = set()
 
-    for batch_folder in tqdm(glob.glob(f'data/annotations/{safety_set}/*'), desc="Gathering Annotations"):
-        annotation_files = glob.glob(f'{batch_folder}/annotations/*')
-        for annotation_file in annotation_files:
-            old_id_to_new_id = {}
-            
-            with open(annotation_file) as f:
-                annotations = json.load(f)
-                
-                # First loop through and make sure any leading folders are removed from the image file names
-                for image in annotations['images']:
-                    image['file_name'] = image['file_name'].split('/')[-1]
+    # Path to the single annotation file
+    annotation_file = '/home/ml_team/Hockey-Player-Tracking/data/annotations/coco_annotations.json'
+    old_id_to_new_id = {}
 
-                # Update image IDs
-                for image in annotations['images']:
-                    old_id = image['id']
-                    new_id = max_image_id
-                    if new_id in image_id_set:
-                        print(f"Image ID {new_id} already exists in the mapping")
-                        continue
-                    if image['file_name'] in image_filename_set:
-                        continue
-                    else:
-                        image_filename_set.add(image['file_name'])
-                        old_id_to_new_id[old_id] = new_id
-                        image['id'] = new_id
-                        max_image_id += 1
+    # Load and process the annotation file
+    with open(annotation_file) as f:
+        annotations = json.load(f)
 
-                    # Append the image to the total annotations
-                    coco_annotations['images'].append(image)
-                
-                # Update annotation IDs
-                for annotation in annotations['annotations']:
-                    if annotation['image_id'] not in old_id_to_new_id:
-                        continue
-                    annotation['image_id'] = old_id_to_new_id[annotation['image_id']]
-                    annotation['id'] = max_annotation_id
-                    max_annotation_id += 1
-                    
-                    # Append the annotation to the total annotations
-                    coco_annotations['annotations'].append(annotation)
+        # Ensure any leading folders are removed from image file names
+        for image in annotations['images']:
+            image['file_name'] = image['file_name']
 
-                # Append the categories to the total annotations
-                coco_annotations['categories'].extend(annotations['categories'])
+        # Update image IDs
+        for image in annotations['images']:
+            old_id = image['id']
+            new_id = max_image_id
+            if new_id in image_id_set:
+                print(f"Image ID {new_id} already exists in the mapping")
+                continue
+            if image['file_name'] in image_filename_set:
+                continue
+            else:
+                image_filename_set.add(image['file_name'])
+                old_id_to_new_id[old_id] = new_id
+                image['id'] = new_id
+                max_image_id += 1
+
+            # Append the image to the total annotations
+            coco_annotations['images'].append(image)
+
+        # Update annotation IDs
+        for annotation in annotations['annotations']:
+            if annotation['image_id'] not in old_id_to_new_id:
+                continue
+            annotation['image_id'] = old_id_to_new_id[annotation['image_id']]
+            annotation['id'] = max_annotation_id
+            max_annotation_id += 1
+
+            # Append the annotation to the total annotations
+            coco_annotations['annotations'].append(annotation)
+
+        # Append the categories to the total annotations
+        coco_annotations['categories'].extend(annotations['categories'])
 
     # Ensure the categories are unique
     unique_categories = {category['id']: category for category in coco_annotations['categories']}
     coco_annotations['categories'] = list(unique_categories.values())
 
     # Save the aggregated annotations to a JSON file
-    with open(f'data/annotations/{safety_set}_total.json', 'w') as f:
+    output_file = '/home/ml_team/Hockey-Player-Tracking/data/annotations/coco_annotations_total.json'
+    with open(output_file, 'w') as f:
         json.dump(coco_annotations, f, indent=4, sort_keys=True)
 
-    # Ensure that each of the image_ids in the annotations are unique to a image_filename
+    # Ensure that each of the image_ids in the annotations are unique to an image_filename
     image_filenames = set()
     image_ids = set()
     for image in coco_annotations['images']:
@@ -363,7 +332,7 @@ if __name__ == '__main__':
 
     # Parse the safety set arguments
     parser = argparse.ArgumentParser(description='Divide the data into train and val sets')
-    parser.add_argument('--safety_set', default='gh')
+    parser.add_argument('--safety_set', default='hockey')
     parser.add_argument('--split_ratio', default=0.90)
     parser.add_argument('--images_annotation_split', default='images', help='Either images or annotations deciding the split type')
     args = parser.parse_args()
@@ -371,9 +340,8 @@ if __name__ == '__main__':
     # Set the safety set
     safety_set = str(args.safety_set)
     split_ratio = float(args.split_ratio)
-    images_annotation_split = str(args.images_annotation_split)
 
-    main(safety_set, split_ratio, images_annotation_split)
+    main(safety_set, split_ratio)
 
 
 
