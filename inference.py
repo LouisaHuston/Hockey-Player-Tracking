@@ -1,172 +1,32 @@
-#!/usr/bin/env python
-#-*- coding: utf-8 -*-
-#
-# ==============================================================================
-# Copyright (c) 2024 Nextera Robotic Systems
-# Description: Inference script for running inference on images using MMdetection
-#
-# Author: Andrew Kent
-# Created on: Thu Mar 07 2024 5:47:50 PM
-# ==============================================================================
 
 from mmdet.apis import init_detector, inference_detector
 
 from multiprocessing import Process, set_start_method, Value, Lock
-from concurrent.futures import ThreadPoolExecutor
 from argparse import ArgumentParser
-from dotenv import load_dotenv
 from datetime import timezone
 
 import numpy as np
 
 import colorlog
-import requests
 import datetime
 import logging
-import redis
-import boto3
 import torch
 import time
-import pika
 import json
 import cv2
 import os
 
-load_dotenv()
-
-BASE_ENDPOINT = os.environ.get("NEXTERA_API_HOST")
-
 def parse_args():
     parser = ArgumentParser()
-    parser.add_argument('--safety-model', help='Safety model to be used for inference', default='gh', required=False)
+    parser.add_argument('--safety-model', help='Safety model to be used for inference', default='hockey', required=False)
     args = parser.parse_args()
     return args
-
-def download_image_from_s3(bucket, base_image_key, folder_path="temp_inference_images/images"):
-    """
-    Download the image from the s3 bucket, preserving the full path structure.
-    """
-    # Construct the full directory path
-    full_path = os.path.join(folder_path, base_image_key)
-    directory = os.path.dirname(full_path)
-
-    # Create the directory structure if it doesn't exist
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-    # Download the file from S3
-    s3 = boto3.client('s3')
-    s3.download_file(bucket, base_image_key, full_path)
-
-    return full_path
-
-def upload_label(box, score, image_json, label_type_id):
-    """
-    Upload inference results to the database
-    using the api
-    """
-    headers = {"x-api-key": os.environ.get("NEXTERA_API_KEY")}
-    string_list = [str(num) for num in box]
-    results = {
-        'processed_image': image_json["id"],
-        'coordinates': f"{ ', '.join(string_list)}",
-        'confidence': float(score),
-        'shape': 'RECTANGLE',
-        'type': label_type_id
-    }
-    res = requests.post(f"{os.environ.get('NEXTERA_API_HOST')}/labels",
-                        json=results, headers=headers)
-    if not res.ok:
-        raise Exception(f"Failed uploading label to API {image_json['id']}")
-    return res.status_code
-
-def mark_model_processed(body, image):
-    headers = {"x-api-key": os.environ.get("NEXTERA_API_KEY")}
-    resp = requests.patch(f"{BASE_ENDPOINT}/processed-image/{image['id']}", data=body, headers=headers)
-
-    if resp.status_code != 200:
-        raise Exception(f"[Mark Processed Failed] {BASE_ENDPOINT}/processed-image/{image['id']}")
-    return resp.status_code
 
 def get_utc_timestamp():
     dt = datetime.datetime.now(timezone.utc)
     utc_time = dt.replace(tzinfo=timezone.utc)
     utc_timestamp = utc_time.timestamp()
     return utc_timestamp
-
-def update_is_processing(key):
-    db = redis.Redis(host=os.environ.get("REDIS_DB_URL"), port=6379, password=os.environ.get("REDIS_DB_PASSWORD") ,decode_responses=True)
-    db.hset(key, 'is_processing', 1)
-    db.hset(key, 'processing_on', str(get_utc_timestamp()))
-
-def update_processed(key):
-    db = redis.Redis(host=os.environ.get("REDIS_DB_URL"), port=6379, password=os.environ.get("REDIS_DB_PASSWORD") ,decode_responses=True)
-    db.hset(key, 'is_processed', 1)
-    db.hset(key, 'processed_on', str(get_utc_timestamp()))
-
-def get_consumer(url, logger):
-
-    parameters = pika.URLParameters(url)
-    try:
-        connection = pika.BlockingConnection(parameters)
-        channel = connection.channel()
-        return channel
-    except Exception as e:
-        logger.error(f"Error in connecting to the queue: {e}")
-        raise Exception(f"Error in connecting to the queue: {e}")
-
-def get_instance_id():
-    response = requests.get('http://169.254.169.254/latest/meta-data/instance-id')
-    instance_id = response.text
-    return instance_id
-
-def name_instance(safety_model):
-    ec2 = boto3.client('ec2')
-    response = requests.get('http://169.254.169.254/latest/meta-data/instance-id')
-    instance_id = response.text
-    return ec2.create_tags(
-        Resources=[
-            instance_id,
-        ],
-        Tags=[
-            {
-                'Key': 'Name',
-                'Value': f"Safety-{safety_model.upper()}-Worker-{instance_id}",
-            },
-        ],
-    )
-
-
-def notify(safety_model, status="Failed"):
-    current = datetime.datetime.now()
-    message = {
-        "blocks": [
-            {
-                "type": "header",
-                "text": {
-                    "type": "plain_text",
-                    "text": f"SAFETY | {safety_model.upper()} Worker: {get_instance_id()}",
-                    "emoji": True
-                }
-            },
-            {
-                "type": "section",
-                "fields": [
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Started at:*\n{current.strftime('%Y-%m-%d %H:%M:%S')} UTC"
-                    },
-                    {
-                        "type": "mrkdwn",
-                        "text": f"*Status:*\n{status}"
-                    }
-                ]
-            }
-        ]
-    }
-    # definitely need to update the slack webhook NOT SECURE
-    resp = requests.post(os.environ.get("SLACK_WEBHOOK_URL"), json=message)
-    return resp
 
 class InferenceWorker:
     def __init__(self, args, channel, queue_name, timeout):
@@ -387,70 +247,6 @@ class InferenceWorker:
 
         return filtered_detections
 
-    def run(self):
-        self.channel.basic_qos(prefetch_count=1)
-        self.start_time = time.time()
-
-        try:
-            while True:
-                with ThreadPoolExecutor() as executor:
-                    method_frame, header_frame, body = self.channel.basic_get(self.queue_name)
-                    if method_frame:
-                        self.channel.basic_ack(method_frame.delivery_tag)
-                        data = json.loads(body)
-                        image_name = data['base_image_key']
-
-                        if image_name in self.seen_images:
-                            self.logger.info(f"Image {image_name} has been processed before.")
-                        else:
-                            self.seen_images.add(image_name)
-
-                            update_is_processing(f"{data['id']}:{self.args.safety_model}")
-                            image_path = f"data/{image_name}"
-                            delete_image = False
-
-                            if not os.path.exists(image_path):
-                                self.logger.error(f"Image {data['id']} not found")
-                                default_bucket = os.environ.get('DEFAULT_S3_BUCKET')
-                                image_path = download_image_from_s3(default_bucket, image_name)
-                                delete_image = True
-
-                            start_inference_time = time.time()
-                            results = self.infer(image_path)
-                            inference_time = time.time() - start_inference_time
-                            self.total_images += 1
-                            self.total_time += inference_time
-                            self.logger.info(f"Image {image_name} has {len(results[0])} labels")
-
-                            # Run the rest asynchronously
-                            executor.submit(self.process_detections, results, data, image_name, delete_image, image_path)
-                    else:
-                        if time.time() - self.start_time > self.timeout:
-                            self.logger.info("No messages in the queue for 60 seconds. Exiting")
-                            break
-
-        except Exception as e:
-            self.logger.error(f"Error in running the worker: {e}")
-            raise Exception(f"Error in running the worker: {e}")
-
-        self.print_summary()
-
-    def process_detections(self, results, data, image_name, delete_image, image_path):
-        img_height, img_width = cv2.imread(image_path).shape[:2]
-        detections = self.extract_detections(results, img_height, img_width)
-        self.logger.info(f"{self.args.device} | Uploaded Image {data['id']}")
-
-        for detection in detections:
-            upload_label(detection['bbox'], detection['score'], data, detection['db_id'])
-            self.logger.info(f"{self.args.device} | Uploaded Image {data['id']} | label: {detection['category_name']} | score: {detection['score']}")
-
-        update_processed(f"{data['id']}:{self.args.safety_model}")
-        mark_model_processed({f"{self.args.safety_model}_processed": True}, data)
-        self.logger.info(f"Image {image_name} processed")
-
-        if delete_image:
-            os.remove(image_path)
-
     def print_summary(self):
         if self.total_images > 0:
             average_time = self.total_time / self.total_images
@@ -495,12 +291,6 @@ class InferenceWorker:
 
         self.print_summary()
 
-def worker_process(args, gpu_id, timeout, queue_name, logger):
-    args.device = f'cuda:{gpu_id}'
-    channel = get_consumer(os.environ.get('RABIT_MQ_URL'), logger)
-    worker = InferenceWorker(args, channel, queue_name, timeout)
-    worker.run()
-
 def worker_process_test(args, gpu_id, timeout, queue_name, logger):
     args.device = f'cuda:{gpu_id}'
 
@@ -539,20 +329,13 @@ def main():
     # Parse arguments
     args = parse_args()
 
-    # Testing flag
-    testing = False
-
     # Set the start method
     set_start_method('spawn')
 
-    # Name the instance
-    if not testing:
-        name_instance(args.safety_model)
-
     # Specify the config file and checkpoint file
     args.device = 'cuda'
-    args.config = f'configs/co_dino_{args.safety_model}/co_dino_5scale_swin_large_16e_o365tococo.py'
-    args.checkpoint = f'{args.safety_model}/best_bbox_mAP.pth'
+    args.config = f'configs/co_dino_hockey/co_dino_5scale_swin_large_16e_o365tococo.py'
+    args.checkpoint = f'hockey/best_bbox_mAP.pth'
 
     # Setup logger
     logger = logging.getLogger(__name__)
@@ -561,19 +344,16 @@ def main():
     logger.info(f'Inference worker for {args.safety_model} initialized')
 
     # This is only for the case that the image is not found in the inference_images folder (EFS)
-    os.makedirs(f"temp_inference_images/images", exist_ok=True)
+    os.makedirs(f"inference_images/images", exist_ok=True)
 
     # Specify the queue name and timeout
-    queue_name = f"safety-worker-{args.safety_model}"
+    queue_name = f"safety-worker-hockey"
     timeout = 60 #60*60*4
     num_gpus = torch.cuda.device_count()
 
     processes = []
     for gpu_id in range(num_gpus):
-        if not testing:
-            p = Process(target=worker_process, args=(args, gpu_id, timeout, queue_name, logger))
-        else:
-            p = Process(target=worker_process_test, args=(args, gpu_id, timeout, queue_name, logger))
+        p = Process(target=worker_process_test, args=(args, gpu_id, timeout, queue_name, logger))
         p.start()
         processes.append(p)
 
