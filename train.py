@@ -1,16 +1,6 @@
-<<<<<<< Updated upstream
-from torch.utils.data import DataLoader
-from transformers import DetrForObjectDetection, DetrImageProcessor
-from src.coco_dataset import COCODataset, collate_fn
-from src.train_detr import train_model
-from src.split import split_coco_json
-
-import torch
-=======
 # Copyright (c) OpenMMLab. All rights reserved.
 import argparse
 import copy
->>>>>>> Stashed changes
 import os
 import os.path as osp
 import time
@@ -117,43 +107,18 @@ def parse_args():
 
 
 def main():
-<<<<<<< Updated upstream
-    # Paths to dataset and annotations
-    annotations_path = 'data/annotations/coco_annotations.json'
-    annotations_output_dir = 'data/annotations'
-    train_annotations = os.path.join(annotations_output_dir, 'train_annotations.json')
-    test_annotations = os.path.join(annotations_output_dir, 'test_annotations.json')
-    img_dir = 'data/images'
-=======
     args = parse_args()
->>>>>>> Stashed changes
 
     cfg = Config.fromfile(args.config)
 
-<<<<<<< Updated upstream
-    # Split the dataset into train and test sets
-    split_coco_json(
-        annotations_path=annotations_path,
-        output_dir=annotations_output_dir,
-        train_file_name='train_annotations.json',
-        test_file_name='test_annotations.json'
-    )
-=======
     # replace the ${key} with the value of cfg.key
     cfg = replace_cfg_vals(cfg)
->>>>>>> Stashed changes
 
     # update data root according to MMDET_DATASETS
     update_data_root(cfg)
 
-<<<<<<< Updated upstream
-    # Create dataset instances
-    train_dataset = COCODataset(train_annotations, img_dir, processor)
-    test_dataset = COCODataset(test_annotations, img_dir, processor)
-=======
     if args.cfg_options is not None:
         cfg.merge_from_dict(args.cfg_options)
->>>>>>> Stashed changes
 
     if args.auto_scale_lr:
         if 'auto_scale_lr' in cfg and \
@@ -170,15 +135,9 @@ def main():
     # set multi-process settings
     setup_multi_processes(cfg)
 
-<<<<<<< Updated upstream
-    # Set the device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model.to(device)
-=======
     # set cudnn_benchmark
     if cfg.get('cudnn_benchmark', False):
         torch.backends.cudnn.benchmark = True
->>>>>>> Stashed changes
 
     # work_dir is determined in this priority: CLI > segment in file > filename
     if args.work_dir is not None:
@@ -189,9 +148,6 @@ def main():
         cfg.work_dir = osp.join('./work_dirs',
                                 osp.splitext(osp.basename(args.config))[0])
 
-<<<<<<< Updated upstream
-if __name__ == "__main__":
-=======
     if args.resume_from is not None:
         cfg.resume_from = args.resume_from
     cfg.auto_resume = args.auto_resume
@@ -286,5 +242,4 @@ if __name__ == "__main__":
 
 
 if __name__ == '__main__':
->>>>>>> Stashed changes
     main()
