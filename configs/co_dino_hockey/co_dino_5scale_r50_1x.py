@@ -325,17 +325,16 @@ test_pipeline = [
 log_config = dict(
     interval=log_interval,
     hooks=[
-        # dict(
-        #         type='TextLoggerHook', 
-        #         by_epoch=False),
+        dict(
+                type='TextLoggerHook', 
+                by_epoch=False),
         dict(
                 type='MMDetWandbHook',
                 by_epoch=False, 
                 num_eval_images=0, 
                 init_kwargs={
-                    'entity': "nexterarobotics",
-                    'project': "Safety_Tracking", 
-                    'name': "co_dino_5scale_r50_1x_excavator_V1.0"},
+                    'project': "Hockey-Player-Tracking", 
+                    'name': "co_dino_5scale_r50_1x_V1.0"},
             ),
     ])
 
