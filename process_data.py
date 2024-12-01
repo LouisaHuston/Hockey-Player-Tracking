@@ -56,21 +56,21 @@ def main():
         json.dump(coco_data, f, indent=4, sort_keys=True)
     logging.info("COCO JSON generated and saved as 'coco_annotations.json'.")
     
-    # Step 6: Overlay bounding boxes on images
-    overlay_boxes('data/annotations/coco_annotations.json', 'data/images', 'data/overlays/')
-    logging.info(f"All images with overlays saved in 'data/overlays/'")
+    # # Step 6: Overlay bounding boxes on images
+    # overlay_boxes('data/annotations/coco_annotations.json', 'data/images', 'data/overlays/')
+    # logging.info(f"All images with overlays saved in 'data/overlays/'")
     
-    # Step 7: Create video from images
-    images_subfolder = os.path.join('data/overlays/', 'allstar_2019', '001')  # Adjust the path as needed
-    output_video_path = 'data/videos/output_video.mp4'
-    os.makedirs('data/videos/', exist_ok=True)
-    frame_rate = 30  # Adjust as needed
-    create_video_from_images(images_subfolder, output_video_path, frame_rate)
-    logging.info(f"Video saved to {output_video_path}")
+    # # Step 7: Create video from images
+    # images_subfolder = os.path.join('data/overlays/', 'allstar_2019', '001')  # Adjust the path as needed
+    # output_video_path = 'data/videos/output_video.mp4'
+    # os.makedirs('data/videos/', exist_ok=True)
+    # frame_rate = 30  # Adjust as needed
+    # create_video_from_images(images_subfolder, output_video_path, frame_rate)
+    # logging.info(f"Video saved to {output_video_path}")
     
-    # Step 8: Generate heatmap
-    generate_heatmap('data/annotations/coco_annotations.json')
-    logging.info("Heatmap generated.")
+    # # Step 8: Generate heatmap
+    # generate_heatmap('data/annotations/coco_annotations.json')
+    # logging.info("Heatmap generated.")
 
 if __name__ == "__main__":
     main()
