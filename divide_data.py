@@ -274,7 +274,7 @@ def gather_annotations():
 
         # Ensure any leading folders are removed from image file names
         for image in annotations['images']:
-            image['file_name'] = image['file_name'].split('/')[-1]
+            image['file_name'] = image['file_name']#.split('/')[-1]
 
         # Update image IDs
         for image in annotations['images']:
