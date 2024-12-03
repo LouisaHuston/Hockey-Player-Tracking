@@ -1,10 +1,10 @@
-#
 #!/usr/bin/env python
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 #
 # ==============================================================================
 # Copyright (c) 2024 Nextera Robotic Systems
-# Description: This script copies the annotations and images to a single folder and json file
+# Description: This script copies the annotations and images to a single folder and json file,
+#              with an option to limit the number of images used for training and validation.
 #
 # Author: Andrew Kent
 # Created on: Thu Mar 07 2024 5:47:50 PM
@@ -12,9 +12,7 @@
 #
 
 import matplotlib.pyplot as plt
-
 from tqdm import tqdm
-
 import argparse
 import random
 import shutil
@@ -22,7 +20,7 @@ import json
 import glob
 import os
 
-def main(safety_set, split_ratio):
+def main(safety_set, split_ratio, max_images):
 
     # Make the directory for saving the jsons and plots
     os.makedirs(f'{safety_set}', exist_ok=True)
@@ -31,7 +29,7 @@ def main(safety_set, split_ratio):
     annotations = gather_annotations()
 
     # Split the annotations into train and val
-    train, val, train_counts, val_counts, categories = split_images(safety_set, annotations, split_ratio)
+    train, val, train_counts, val_counts, categories = split_images(safety_set, annotations, split_ratio, max_images)
 
     # Plot the category distribution
     plot_category_distribution(safety_set, train_counts, val_counts, categories)
@@ -54,7 +52,7 @@ def check_images_annotations(data_set, folder):
 def calculate_bbox_area(bbox):
     return bbox[2] * bbox[3]
 
-def split_images(safety_set, annotations, split_ratio):
+def split_images(safety_set, annotations, split_ratio, max_images):
     random.seed(42)
     
     # Get the list of category names
@@ -80,8 +78,15 @@ def split_images(safety_set, annotations, split_ratio):
             cat_id = ann['category_id']
             image_pixels[image_id][cat_id] += calculate_bbox_area(ann['bbox'])
 
-    # Shuffle and split images ensuring balanced category pixel counts
+    # Limit the number of images if max_images is specified
     all_images = list(image_dict.values())
+    if max_images is not None and max_images < len(all_images):
+        all_images = all_images[:max_images]
+        print(f"Limiting to {max_images} images out of {len(image_dict)} total images.")
+    else:
+        print(f"Using all {len(all_images)} available images.")
+
+    # Shuffle and split images ensuring balanced category pixel counts
     random.shuffle(all_images)
     total_pixels = {category['id']: 0 for category in annotations['categories']}
     for image in all_images:
@@ -136,10 +141,10 @@ def split_images(safety_set, annotations, split_ratio):
     # Specify the number of validation and training images
     val_images = len(val['images'])
     train_images = len(train['images'])
-    image_ratio = train_images / (train_images+val_images)
+    image_ratio = train_images / (train_images + val_images)
 
     # Print the number of validation and training images, and the ratio next to the split ratio
-    print(f"Train: {train_images} images, Val {val_images} Images, Image Ratio {image_ratio}, Ratio {split_ratio}")
+    print(f"Train: {train_images} images, Val: {val_images} images, Image Ratio: {image_ratio:.2f}, Split Ratio: {split_ratio}")
 
     return train, val, train_counts, val_counts, categories
 
@@ -169,7 +174,7 @@ def split_annotations(safety_set, annotations, split_ratio):
         if category_id not in category_to_images:
             category_to_images[category_id] = []
             category_to_annotations[category_id] = []
-        # Remoove leading folders from image file name
+        # Remove leading folders from image file name
         image_dict[image_id]['file_name'] = image_dict[image_id]['file_name'].split('/')[-1]
         category_to_images[category_id].append(image_dict[image_id])
         category_to_annotations[category_id].append(annotation)
@@ -223,8 +228,8 @@ def plot_category_distribution(safety_set, train_counts, val_counts, categories_
     # Calculate percentages
     total_train = sum(train_vals)
     total_val = sum(val_vals)
-    train_percents = [x / total_train * 100 for x in train_vals]
-    val_percents = [x / total_val * 100 for x in val_vals]
+    train_percents = [x / total_train * 100 if total_train > 0 else 0 for x in train_vals]
+    val_percents = [x / total_val * 100 if total_val > 0 else 0 for x in val_vals]
 
     # Adjust figure size and plot layout to better accommodate long labels
     fig, ax = plt.subplots(figsize=(15, 10))  # Increase width for more horizontal space
@@ -244,7 +249,7 @@ def plot_category_distribution(safety_set, train_counts, val_counts, categories_
         for bar, value in zip(bars, values):
             yval = bar.get_height()
             if is_train:
-                offset = .55  # Adjust the offset for train bar annotations
+                offset = 0.55  # Adjust the offset for train bar annotations
             else:
                 offset = 0.05  # Smaller or no offset for validation bar annotations
             ax.text(bar.get_x() + bar.get_width()/2, yval + offset, f'{int(value)}', va='bottom', ha='center')  # Center align text
@@ -356,20 +361,14 @@ if __name__ == '__main__':
     # Parse the safety set arguments
     parser = argparse.ArgumentParser(description='Divide the data into train and val sets')
     parser.add_argument('--safety_set', default='hockey')
-    parser.add_argument('--split_ratio', default=0.90)
+    parser.add_argument('--split_ratio', default=0.90, type=float)
     parser.add_argument('--images_annotation_split', default='images', help='Either images or annotations deciding the split type')
+    parser.add_argument('--max_images', default=100, type=int, help='Maximum number of images to use for training and validation')
     args = parser.parse_args()
 
     # Set the safety set
     safety_set = str(args.safety_set)
     split_ratio = float(args.split_ratio)
+    max_images = args.max_images
 
-    main(safety_set, split_ratio)
-
-
-
-
-
-
-
-
+    main(safety_set, split_ratio, max_images)
