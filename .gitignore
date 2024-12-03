@@ -26,6 +26,7 @@ __pycache__/
 
 # Logs
 *.log
+*.log.json
 
 # OS-specific files
 .DS_Store
