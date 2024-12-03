@@ -269,7 +269,7 @@ def gather_annotations():
 
         # Ensure any leading folders are removed from image file names
         for image in annotations['images']:
-            image['file_name'] = image['file_name']
+            image['file_name'] = image['file_name'].split('/')[-1]
 
         # Update image IDs
         for image in annotations['images']:
@@ -297,8 +297,31 @@ def gather_annotations():
             annotation['id'] = max_annotation_id
             max_annotation_id += 1
 
-            # Append the annotation to the total annotations
-            coco_annotations['annotations'].append(annotation)
+            # Remove unwanted fields
+            # Keep only the standard COCO fields
+            cleaned_annotation = {
+                'id': annotation['id'],
+                'image_id': annotation['image_id'],
+                'category_id': annotation['category_id'],
+                'bbox': annotation['bbox'],
+                'iscrowd': annotation.get('iscrowd', 0)
+            }
+
+            # Optionally, compute area if not present
+            if 'area' not in annotation:
+                x, y, width, height = annotation['bbox']
+                cleaned_annotation['area'] = width * height
+            else:
+                cleaned_annotation['area'] = annotation['area']
+
+            # If segmentation is present and needed
+            if 'segmentation' in annotation:
+                cleaned_annotation['segmentation'] = annotation['segmentation']
+            else:
+                cleaned_annotation['segmentation'] = []
+
+            # Append the cleaned annotation to the total annotations
+            coco_annotations['annotations'].append(cleaned_annotation)
 
         # Append the categories to the total annotations
         coco_annotations['categories'].extend(annotations['categories'])
