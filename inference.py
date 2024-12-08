@@ -335,7 +335,7 @@ def main():
     # Specify the config file and checkpoint file
     args.device = 'cuda'
     args.config = f'configs/co_dino_hockey/co_dino_5scale_swin_large_16e_o365tococo.py'
-    args.checkpoint = f'hockey/best_bbox_mAP.pth'
+    args.checkpoint = f'latest.pth'
 
     # Setup logger
     logger = logging.getLogger(__name__)
