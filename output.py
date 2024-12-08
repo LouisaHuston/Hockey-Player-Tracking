@@ -194,7 +194,7 @@ print(f"Video saved to: {video_output_path}")
 # print(f"Scaled pixel coordinates on new image: ({final_pixel_x}, {final_pixel_y})")
 
 # # Step 7: Load the pre-stored blank rink image (1232x637)
-# blank_image_path = '/content/unnamed.jpg'  # Path to your blank rink image
+# blank_image_path = 'assets/blankrink.jpg'  # Path to your blank rink image
 # blank_image = cv2.imread(blank_image_path)
 
 # # Ensure the image is loaded successfully
