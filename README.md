@@ -58,7 +58,7 @@ pip install -r requirements.txt
 To train the model with the default settings:
 
 ```bash
-python train.py
+./train.sh configs/co_dino_hockey/co_dino_5scale_swin_large_16e_o365tococo.py
 ```
 
 To perform inference on a new dataset:
