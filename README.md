@@ -35,7 +35,7 @@ Ensure you have Python 3.8 or higher installed.
 It is recommended to set up a virtual environment for managing dependencies. You can create a virtual environment named `hockey` and install the dependencies as follows:
 
 ```bash
-
+# Clone the Repo
 git clone https://github.com/LouisaHuston/Hockey-Player-Tracking.git
 cd Hockey-Player-Tracking
 
