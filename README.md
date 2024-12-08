@@ -35,6 +35,10 @@ Ensure you have Python 3.8 or higher installed.
 It is recommended to set up a virtual environment for managing dependencies. You can create a virtual environment named `hockey` and install the dependencies as follows:
 
 ```bash
+
+git clone https://github.com/LouisaHuston/Hockey-Player-Tracking.git
+cd Hockey-Player-Tracking
+
 # Create a virtual environment
 python3 -m venv hockey
 source hockey/bin/activate
@@ -47,6 +51,13 @@ pip install mmcv-full==1.5.0 -f https://download.openmmlab.com/mmcv/dist/cu113/t
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Download the data
+python3 process_data.py
+
+# Divide the data
+python3 divide_data.py
+
 ```
 
 ### Running the Project
