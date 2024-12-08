@@ -37,10 +37,13 @@ It is recommended to set up a virtual environment for managing dependencies. You
 ```bash
 # Create a virtual environment
 python3 -m venv hockey
-
-# Activate the virtual environment
-# On macOS/Linux:
 source hockey/bin/activate
+python3 -m pip install --upgrade pip
+pip install --upgrade pip
+
+# Install Torch and MMCV
+pip install torch==1.11.0+cu113 torchvision==0.12.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html 
+pip install mmcv-full==1.5.0 -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.11.0/index.html
 
 # Install dependencies
 pip install -r requirements.txt
