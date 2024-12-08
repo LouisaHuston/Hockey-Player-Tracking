@@ -219,7 +219,7 @@ dist_params = dict(backend='nccl')
 log_level = 'INFO'
 load_from = 'pretrained/co_dino_5scale_swin_large_16e_o365tococo.pth'
 resume_from = None
-workflow = [('train', 1), ('val', 1)]
+workflow = [('train', 1)]
 opencv_num_threads = 0
 mp_start_method = 'fork'
 auto_scale_lr = dict(enable=False, base_batch_size=16)
@@ -228,7 +228,7 @@ lambda_2 = 2.0
 num_classes = 1
 num_gpus = 1
 samples_per_gpu = 1
-workers_per_gpu = 2
+workers_per_gpu = 1
 base_batch_size = 1
 max_iters = 100000
 max_checkpoints = 3
@@ -471,17 +471,7 @@ model = dict(
             max_per_img=100)
     ])
 log_config = dict(
-    interval=10,
-    hooks=[
-        dict(type='TextLoggerHook', by_epoch=False),
-        dict(
-            type='MMDetWandbHook',
-            by_epoch=False,
-            num_eval_images=0,
-            init_kwargs=dict(
-                project='Hockey-Player-Tracking',
-                name='co_dino_5scale_r50_1x_V1.0'))
-    ])
+    interval=10, hooks=[dict(type='TextLoggerHook', by_epoch=False)])
 runner = dict(type='IterBasedRunner', max_iters=100000)
 checkpoint_config = dict(by_epoch=False, interval=499, max_keep_ckpts=3)
 optimizer = dict(

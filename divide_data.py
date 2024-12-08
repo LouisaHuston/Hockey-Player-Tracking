@@ -68,6 +68,9 @@ def split_images(safety_set, annotations, split_ratio, max_images):
     image_dict = {image['id']: image for image in annotations['images']}
     image_annotations = {image['id']: [] for image in annotations['images']}
     for annotation in annotations['annotations']:
+        annotation['attributes'] = {}
+        annotation['attributes']["occluded"] = False
+        annotation['attributes']["rotation"] = 0.0
         image_annotations[annotation['image_id']].append(annotation)
     
     # Calculate pixel counts for each image by category
@@ -110,17 +113,33 @@ def split_images(safety_set, annotations, split_ratio, max_images):
                 break
 
         if feasible_for_train:
+            image['coco_url'] = ""
+            image['date_captured'] = 0
+            image['flickr_url'] = ""
+            image['license'] = 0
             train['images'].append(image)
             train['annotations'].extend(image_annotations[image_id])
             image_added.add(image_id)
             for cat_id in image_pixels[image_id]:
                 train_counts[cat_id] += image_pixels[image_id][cat_id]
         else:
+            image['coco_url'] = ""
+            image['date_captured'] = 0
+            image['flickr_url'] = ""
+            image['license'] = 0
             val['images'].append(image)
             val['annotations'].extend(image_annotations[image_id])
             image_added.add(image_id)
             for cat_id in image_pixels[image_id]:
                 val_counts[cat_id] += image_pixels[image_id][cat_id]
+
+    # Make both the train and val categories only have one category
+    train['categories'] = train['categories'][:1]
+    val['categories'] = val['categories'][:1]
+    train['categories'][0]['name'] = 'player'
+    val['categories'][0]['name'] = 'player'
+    train['categories'][0]['supercategory'] = ""
+    val['categories'][0]['supercategory'] = ""
 
     # Save to JSON files
     with open(f'data/annotations/{safety_set}_train.json', 'w') as f:
@@ -363,7 +382,7 @@ if __name__ == '__main__':
     parser.add_argument('--safety_set', default='hockey')
     parser.add_argument('--split_ratio', default=0.90, type=float)
     parser.add_argument('--images_annotation_split', default='images', help='Either images or annotations deciding the split type')
-    parser.add_argument('--max_images', default=100, type=int, help='Maximum number of images to use for training and validation')
+    parser.add_argument('--max_images', default=1000, type=int, help='Maximum number of images to use for training and validation')
     args = parser.parse_args()
 
     # Set the safety set

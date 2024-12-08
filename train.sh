@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Clear the terminal
+clear
+
 # Create the directory for the UAV work
 mkdir -p hockey
 

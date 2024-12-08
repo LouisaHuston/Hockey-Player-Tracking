@@ -11,7 +11,7 @@ num_classes = 1
 # Compute Settings
 num_gpus = 1
 samples_per_gpu = 1
-workers_per_gpu = 2*samples_per_gpu
+workers_per_gpu = 1*samples_per_gpu
 base_batch_size = num_gpus*samples_per_gpu # base_batch_size = (8 GPUs) x (2 samples per GPU)
 
 # Evaluation Settings
@@ -328,14 +328,14 @@ log_config = dict(
         dict(
                 type='TextLoggerHook', 
                 by_epoch=False),
-        dict(
-                type='MMDetWandbHook',
-                by_epoch=False, 
-                num_eval_images=0, 
-                init_kwargs={
-                    'project': "Hockey-Player-Tracking", 
-                    'name': "co_dino_5scale_r50_1x_V1.0"},
-            ),
+        # dict(
+        #         type='MMDetWandbHook',
+        #         by_epoch=False, 
+        #         num_eval_images=0, 
+        #         init_kwargs={
+        #             'project': "Hockey-Player-Tracking", 
+        #             'name': "co_dino_5scale_r50_1x_V1.0"},
+        #     ),
     ])
 
 runner = dict(type='IterBasedRunner', max_iters=max_iters)
