@@ -21,7 +21,7 @@ max_checkpoints = 3
 # Interval Settings
 log_interval = 10
 wandb_interval = 99
-evaluation_interval = 1499
+evaluation_interval = 1000000
 checkpoint_interval = int(evaluation_interval/max_checkpoints)
 
 # Specify dataset related settings
