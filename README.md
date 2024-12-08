@@ -30,6 +30,24 @@ This project focuses on tracking hockey players in game footage, utilizing machi
 
 Ensure you have Python 3.8 or higher installed.
 
+### CPU Monitoring
+
+To install and run `bpytop` for CPU monitoring:
+```bash
+sudo apt install snapd
+sudo snap install bpytop
+bpytop
+```
+
+### GPU Monitoring
+
+To install and run `nvitop` for GPU monitoring:
+```bash
+sudo apt install pipx
+sudo apt install python3.8-venv
+pipx run nvitop
+```
+
 ### Virtual Environment Setup
 
 It is recommended to set up a virtual environment for managing dependencies. You can create a virtual environment named `hockey` and install the dependencies as follows:
@@ -67,12 +85,18 @@ python3 divide_data.py
 3. **Training**: Execute `train.py` to train the model on the hockey player tracking dataset.
 4. **Inference**: Run `inference.py` to use the trained model on new video data.
 
-### Example Usage
+### Usage
 
 To train the model with the default settings:
 
 ```bash
 ./train.sh configs/co_dino_hockey/co_dino_5scale_swin_large_16e_o365tococo.py
+```
+
+To train the model with the default settings:
+
+```bash
+./test.sh configs/co_dino_hockey/co_dino_5scale_swin_large_16e_o365tococo.py
 ```
 
 To perform inference on a new dataset:
