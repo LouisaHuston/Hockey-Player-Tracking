@@ -58,8 +58,8 @@ git clone https://github.com/LouisaHuston/Hockey-Player-Tracking.git
 cd Hockey-Player-Tracking
 
 # Create a virtual environment
-python3 -m venv hockey
-source hockey/bin/activate
+python3 -m venv training
+source training/bin/activate
 python3 -m pip install --upgrade pip
 pip install --upgrade pip
 
