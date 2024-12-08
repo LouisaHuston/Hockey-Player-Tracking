@@ -34,11 +34,8 @@ class InferenceWorker:
         self.channel = channel
         self.queue_name = queue_name
         self.timeout = timeout
-        self.class_names = {c['id']: c['name'] for c in json.load(open(f"configs/co_dino_{self.args.safety_model}/db_id.json", 'r'))}
-        self.id_db_map = {c['id']: c['db_id'] for c in json.load(open(f"configs/co_dino_{self.args.safety_model}/db_id.json", 'r'))}
-        self.contradictions = json.load(open(f"configs/contradictions/contradictions.json", 'r'))
-        self.lookup_table = json.load(open(f"configs/co_dino_{self.args.safety_model}/lookup_table.json", 'r'))
-        self.name_threshold_map = {c['id']: c['threshold'] for c in json.load(open(f"configs/co_dino_{self.args.safety_model}/db_id.json", 'r'))}
+        self.class_names = {'id': 'player'}
+        self.id_db_map = {1: 1}
         self.logger = self.setup_logger()
         self.logger.info('InferenceWorker initialized')
         self.total_images = 0
@@ -77,66 +74,6 @@ class InferenceWorker:
             raise ValueError(f"Image file does not exist: {image_path}")
 
         return inference_detector(self.model, cv2.imread(image_path))
-
-    # Get precision value from lookup table
-    def get_precision(self, lookup_table, category, confidence):
-        index = min(int(confidence // 0.004016064257028112), 249)
-        return lookup_table[str(category)]['precision'][index]
-
-    def are_contradicting(self, cat1, cat2, contradictions, category_map):
-        name1 = category_map.get(cat1, "")
-        name2 = category_map.get(cat2, "")
-        return (name1, name2) in contradictions or (name2, name1) in contradictions
-
-    def remove_overlapping_contradictions(self, detections, iou_threshold=0.75):
-        # Return an empty list if there are no detections
-        if not detections:
-            return []
-
-        # Convert bounding boxes, scores, and categories to numpy arrays
-        boxes = np.array([d['bbox'] for d in detections])
-        scores = np.array([d['score'] for d in detections])
-        categories = np.array([d['category_id'] for d in detections])
-
-        # Sort indices based on scores in descending order
-        indices = np.argsort(scores)[::-1]
-
-        keep = []  # List to keep track of indices to retain
-        discarded = set()  # Set to track discarded indices
-
-        for i in indices:
-            if i in discarded:
-                continue  # Skip if the index is already discarded
-
-            keep.append(i)  # Add the current index to the keep list
-
-            for j in indices:
-                if i == j or j in discarded:
-                    continue  # Skip comparing the box with itself or if already discarded
-
-                # Compute IoU between the current box and the others
-                iou = self.compute_iou(
-                    [boxes[i][0], boxes[i][1], boxes[i][0] + boxes[i][2], boxes[i][1] + boxes[i][3]],
-                    [boxes[j][0], boxes[j][1], boxes[j][0] + boxes[j][2], boxes[j][1] + boxes[j][3]]
-                )
-
-                if iou > iou_threshold:
-                    # Check if categories are contradicting
-                    if self.are_contradicting(categories[i], categories[j], self.contradictions, self.class_names):
-                        # Get precision values for the categories
-                        precision1 = self.get_precision(self.lookup_table, categories[i], scores[i])
-                        precision2 = self.get_precision(self.lookup_table, categories[j], scores[j])
-                        if precision1 < precision2:
-                            discarded.add(i)  # Discard the current box if it has lower precision
-                            keep.remove(i)
-                            break
-                        else:
-                            discarded.add(j)  # Discard the overlapping box if it has lower precision
-
-        # Return the detections corresponding to the kept indices
-        return [detections[i] for i in keep]
-
-
 
     def nms(self, detections, iou_threshold=0.75):
         if not detections:
@@ -181,18 +118,6 @@ class InferenceWorker:
         iou = inter_area / (box1_area + box2_area - inter_area)
         return iou
 
-    def calculate_phi(self, y1, y2, image_height):
-        # Calculate the height of the bounding box
-        bbox_height = y2 - y1
-
-        # Calculate the midpoint of the bounding box
-        y_mid = y1 + (bbox_height / 2)
-
-        # Calculate phi based on the midpoint
-        phi = -((y_mid - image_height) / image_height) * np.pi
-
-        return phi
-
     def calculate_bbox_area(self, x1, y1, x2, y2, image_height, image_width):
         # Calculate the width and height of the bounding box
         bbox_width = x2 - x1
@@ -210,40 +135,21 @@ class InferenceWorker:
                 x1, y1, x2, y2, score = bbox[:5]
                 width, height = x2 - x1, y2 - y1
                 cat_id = int(label) + 1
-
-                # Filter out detections that are in the upper n% of the image
-                if y1 < upper_threshold:
-                    continue
-
-                if score < self.name_threshold_map[cat_id]:
-                    continue
-                # hands and gloves: phi filters out bottom angle and area excludes large bbox
-                if self.args.safety_model == "ppe" and cat_id in [1,2]:
-                    phi = self.calculate_phi(y1, y2, img_height)
-                    bbox_area = self.calculate_bbox_area( x1, y1, x2, y2, img_height, image_width)
-                    if phi < 0.51373182 or bbox_area > .003:
-                        continue
-
-
+                
                 detections.append({
                     "bbox": [int(x1), int(y1), int(width), int(height)],
                     "score": float(score),
                     "category_id": cat_id,
-                    "category_name": self.class_names[cat_id],
-                    "db_id": self.id_db_map[cat_id],
+                    "category_name": 'player',
+                    "db_id": 1,
                 })
 
-        detections = self.remove_overlapping_contradictions(detections)
         # Perform NMS
         filtered_detections = []
         categories = set(d['category_id'] for d in detections)
         for category in categories:
             category_detections = [d for d in detections if d['category_id'] == category]
-            # Skips Guardrail category when performing non-maximal suppression
-            if self.args.safety_model == "gh" and category in [1,2,3,4,5,6,7,8,12]:
-                filtered_detections.extend(category_detections)
-            else:
-                filtered_detections.extend(self.nms(category_detections))
+            filtered_detections.extend(self.nms(category_detections))
 
         return filtered_detections
 
