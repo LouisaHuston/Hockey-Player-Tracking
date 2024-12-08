@@ -284,7 +284,7 @@ def gather_annotations():
     image_filename_set = set()
 
     # Path to the single annotation file
-    annotation_file = '/home/ml_team/Hockey-Player-Tracking/data/annotations/coco_annotations.json'
+    annotation_file = 'data/annotations/coco_annotations.json'
     old_id_to_new_id = {}
 
     # Load and process the annotation file
@@ -355,7 +355,7 @@ def gather_annotations():
     coco_annotations['categories'] = list(unique_categories.values())
 
     # Save the aggregated annotations to a JSON file
-    output_file = '/home/ml_team/Hockey-Player-Tracking/data/annotations/coco_annotations_total.json'
+    output_file = 'data/annotations/coco_annotations_total.json'
     with open(output_file, 'w') as f:
         json.dump(coco_annotations, f, indent=4, sort_keys=True)
 

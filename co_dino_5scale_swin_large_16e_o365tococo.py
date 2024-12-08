@@ -484,4 +484,4 @@ lr_config = dict(policy='step', step=[8])
 pretrained = 'pretrained/co_dino_5scale_swin_large_16e_o365tococo.pth'
 work_dir = ''
 auto_resume = False
-gpu_ids = range(0, 2)
+gpu_ids = [0]
