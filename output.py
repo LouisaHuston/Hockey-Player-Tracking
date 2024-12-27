@@ -3,24 +3,14 @@ import cv2
 import matplotlib.pyplot as plt
 import os
 
-# Example detections list with multiple bounding boxes for a single image
-detections = [
-    {
-        "image_id": 1,
-        "bounding_boxes": [
-            {"bbox": [430, 278, 132, 169], "score": 0.85, "category_id": 1, "category_name": "player", "db_id": 123},
-            {"bbox": [1200, 350, 100, 150], "score": 0.92, "category_id": 2, "category_name": "puck", "db_id": 124}
-        ]
-    },
-    # Add more dictionaries here for additional frames/images
-]
+# Must import detections list and name it detections
 
 # Folder to save the output images
 output_folder = '/content/output_images'
 os.makedirs(output_folder, exist_ok=True)
 
 # Step 1: Load the blank rink image (1232x637)
-blank_image_path = '/content/unnamed.jpg'  # Path to your blank rink image
+blank_image_path = 'assets/blankrink.jpg'
 blank_image = cv2.imread(blank_image_path)
 
 # Ensure the image is loaded successfully
