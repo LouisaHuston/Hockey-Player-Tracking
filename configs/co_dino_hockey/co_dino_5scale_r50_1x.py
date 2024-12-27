@@ -10,7 +10,7 @@ num_classes = 1
 
 # Compute Settings
 num_gpus = 1
-samples_per_gpu = 1
+samples_per_gpu = 2
 workers_per_gpu = 1*samples_per_gpu
 base_batch_size = num_gpus*samples_per_gpu # base_batch_size = (8 GPUs) x (2 samples per GPU)
 
@@ -21,7 +21,7 @@ max_checkpoints = 3
 # Interval Settings
 log_interval = 10
 wandb_interval = 99
-evaluation_interval = 1000000
+evaluation_interval = 2000
 checkpoint_interval = int(evaluation_interval/max_checkpoints)
 
 # Specify dataset related settings

@@ -213,7 +213,7 @@ data = dict(
                 ])
         ]))
 evaluation = dict(
-    interval=1000000, metric='bbox', save_best='bbox_mAP', by_epoch=False)
+    interval=2000, metric='bbox', save_best='bbox_mAP', by_epoch=False)
 custom_hooks = [dict(type='NumClassCheckHook')]
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
@@ -227,15 +227,15 @@ num_dec_layer = 6
 lambda_2 = 2.0
 num_classes = 1
 num_gpus = 1
-samples_per_gpu = 1
-workers_per_gpu = 1
-base_batch_size = 1
+samples_per_gpu = 2
+workers_per_gpu = 2
+base_batch_size = 2
 max_iters = 100000
 max_checkpoints = 3
 log_interval = 10
 wandb_interval = 99
-evaluation_interval = 1000000
-checkpoint_interval = 333333
+evaluation_interval = 2000
+checkpoint_interval = 666
 model = dict(
     type='CoDETR',
     backbone=dict(
@@ -473,7 +473,7 @@ model = dict(
 log_config = dict(
     interval=10, hooks=[dict(type='TextLoggerHook', by_epoch=False)])
 runner = dict(type='IterBasedRunner', max_iters=100000)
-checkpoint_config = dict(by_epoch=False, interval=333333, max_keep_ckpts=3)
+checkpoint_config = dict(by_epoch=False, interval=666, max_keep_ckpts=3)
 optimizer = dict(
     type='AdamW',
     lr=0.0001,
