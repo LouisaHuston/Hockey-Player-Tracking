@@ -76,6 +76,9 @@ python3 process_data.py
 # Divide the data
 python3 divide_data.py
 
+# Install ffmpeg
+sudo apt-get install ffmpeg
+
 ```
 
 ### Running the Project
