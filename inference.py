@@ -416,7 +416,7 @@ def main():
     # Parse arguments
     parser = ArgumentParser()
     parser.add_argument('--safety-model', help='Safety model to be used for inference', default='hockey')
-    parser.add_argument('--video-path', help='Path to the input video', default='assets/IMG-2113.mov')
+    parser.add_argument('--video-path', help='Path to the input video', default='assets/IMG-2113.mov') # use mp4's
     args = parser.parse_args()
 
     # Set the start method
