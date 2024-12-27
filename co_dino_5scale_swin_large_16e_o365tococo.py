@@ -213,7 +213,7 @@ data = dict(
                 ])
         ]))
 evaluation = dict(
-    interval=1499, metric='bbox', save_best='bbox_mAP', by_epoch=False)
+    interval=1000000, metric='bbox', save_best='bbox_mAP', by_epoch=False)
 custom_hooks = [dict(type='NumClassCheckHook')]
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
@@ -234,8 +234,8 @@ max_iters = 100000
 max_checkpoints = 3
 log_interval = 10
 wandb_interval = 99
-evaluation_interval = 1499
-checkpoint_interval = 499
+evaluation_interval = 1000000
+checkpoint_interval = 333333
 model = dict(
     type='CoDETR',
     backbone=dict(
@@ -471,9 +471,19 @@ model = dict(
             max_per_img=100)
     ])
 log_config = dict(
-    interval=10, hooks=[dict(type='TextLoggerHook', by_epoch=False)])
+    interval=10,
+    hooks=[
+        dict(type='TextLoggerHook', by_epoch=False),
+        dict(
+            type='MMDetWandbHook',
+            by_epoch=False,
+            num_eval_images=0,
+            init_kwargs=dict(
+                project='Hockey-Player-Tracking',
+                name='co_dino_5scale_r50_1x_V1.0'))
+    ])
 runner = dict(type='IterBasedRunner', max_iters=100000)
-checkpoint_config = dict(by_epoch=False, interval=499, max_keep_ckpts=3)
+checkpoint_config = dict(by_epoch=False, interval=333333, max_keep_ckpts=3)
 optimizer = dict(
     type='AdamW',
     lr=0.0001,
@@ -484,4 +494,4 @@ lr_config = dict(policy='step', step=[8])
 pretrained = 'pretrained/co_dino_5scale_swin_large_16e_o365tococo.pth'
 work_dir = ''
 auto_resume = False
-gpu_ids = [0]
+gpu_ids = range(0, 2)

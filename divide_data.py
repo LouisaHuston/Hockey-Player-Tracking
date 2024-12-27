@@ -380,7 +380,7 @@ if __name__ == '__main__':
     # Parse the safety set arguments
     parser = argparse.ArgumentParser(description='Divide the data into train and val sets')
     parser.add_argument('--safety_set', default='hockey')
-    parser.add_argument('--split_ratio', default=0.90, type=float)
+    parser.add_argument('--split_ratio', default=0.8, type=float)
     parser.add_argument('--images_annotation_split', default='images', help='Either images or annotations deciding the split type')
     parser.add_argument('--max_images', default=1000, type=int, help='Maximum number of images to use for training and validation')
     args = parser.parse_args()
