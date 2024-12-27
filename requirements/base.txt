@@ -29,3 +29,4 @@ termcolor
 yacs
 scikit-learn
 yapf==0.40.1
+colorlog

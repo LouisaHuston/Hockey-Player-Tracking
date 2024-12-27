@@ -471,17 +471,7 @@ model = dict(
             max_per_img=100)
     ])
 log_config = dict(
-    interval=10,
-    hooks=[
-        dict(type='TextLoggerHook', by_epoch=False),
-        dict(
-            type='MMDetWandbHook',
-            by_epoch=False,
-            num_eval_images=0,
-            init_kwargs=dict(
-                project='Hockey-Player-Tracking',
-                name='co_dino_5scale_r50_1x_V1.0'))
-    ])
+    interval=10, hooks=[dict(type='TextLoggerHook', by_epoch=False)])
 runner = dict(type='IterBasedRunner', max_iters=100000)
 checkpoint_config = dict(by_epoch=False, interval=333333, max_keep_ckpts=3)
 optimizer = dict(
